@@ -1,6 +1,6 @@
 /******************************************************************************
  * File Name: msgservid.c
- * Author: Pedro Ferreira, João Nobre, Filipe Ferreira IST MEEC
+ * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
  *     msgservid - interface implementation for the identification structure 

@@ -1,6 +1,6 @@
 /******************************************************************************
  * File Name: msgserv.c
- * Author: Pedro Ferreira, João Nobre, Filipe Ferreira IST MEEC
+ * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
  *     msgserv - message server for the RCI reliable message board app
