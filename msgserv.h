@@ -61,8 +61,10 @@ char* MSGSERV_get_ip_str(MSGSERV*);
 
 void MSGSERV_set_upt(MSGSERV*, int);
 int MSGSERV_get_upt(MSGSERV*);
+int MSGSERV_get_upt_str(MSGSERV*, char*);
 
 void MSGSERV_set_tpt(MSGSERV*, int);
 int MSGSERV_get_tpt(MSGSERV*);
+int MSGSERV_get_tpt_str(MSGSERV*, char*);
 
 #endif

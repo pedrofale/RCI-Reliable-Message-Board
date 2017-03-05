@@ -27,6 +27,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "msgserv.h"
+#include "msgservui.h"
+
+#define BUFFSIZE 20
 
 MSGSERV *msgserv;
 
@@ -41,21 +44,31 @@ void parse_args(char **, int, char **);
 int main(int argc, char *argv[]) {
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
+	char user_input[BUFFSIZE];
+	int command = 0;
 
 	msgserv = MSGSERV_create();
 	parse_args(argv, argc, params);
 	init_msgserv_id(params);
 	print_id();
 
-	/* create UDP server on port upt */
 
+	/* create UDP server on port upt */
+	//connect_udp();
 
 	/* create TCP server on port tpt */
+	//connect_tcp();
 
 	/* wait for input from the CLI */
 	while(1) {
 		/* main routines go here */
-		break;	
+		printf(">> ");
+		fgets(user_input, BUFFSIZE, stdin);
+		user_input[strcspn(user_input, "\n")] = '\0';
+		if(!strcmp(user_input, "join")) join(msgserv);
+		if(!strcmp(user_input, "show_servers")) //show_servers();
+		if(!strcmp(user_input, "show_messages")) show_messages();
+		if(!strcmp(user_input, "exit")) { exitapp(); break; }
 	}
 
 	MSGSERV_free(msgserv);

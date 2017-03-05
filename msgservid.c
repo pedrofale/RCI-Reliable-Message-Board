@@ -21,6 +21,7 @@
 
 #include "msgservid.h"
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 struct sMSGSERVID {
@@ -77,10 +78,18 @@ int MSGSERVID_get_upt(MSGSERVID* p) {
 	return p->upt;
 }
 
+int MSGSERVID_get_upt_str(MSGSERVID* p, char *str) {
+	return sprintf(str, "%d", p->upt);
+}
+
 void MSGSERVID_set_tpt(MSGSERVID* p, int tpt) { 
 	p->tpt = tpt;
 }
 
 int MSGSERVID_get_tpt(MSGSERVID* p) {
 	return p->tpt;
+}
+
+int MSGSERVID_get_tpt_str(MSGSERVID* p, char* str) {
+	return sprintf(str, "%d", p->tpt);
 }

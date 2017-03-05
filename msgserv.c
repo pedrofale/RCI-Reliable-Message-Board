@@ -132,10 +132,18 @@ int MSGSERV_get_upt(MSGSERV *p) {
 	return MSGSERVID_get_upt(p->msgserv_id);
 }
 
+int MSGSERV_get_upt_str(MSGSERV *p, char *str) {
+	return MSGSERVID_get_upt_str(p->msgserv_id, str);
+}
+
 void MSGSERV_set_tpt(MSGSERV *p, int tpt) { 
 	MSGSERVID_set_tpt(p->msgserv_id, tpt);
 }
 
 int MSGSERV_get_tpt(MSGSERV *p) {
 	return MSGSERVID_get_tpt(p->msgserv_id);
+}
+
+int MSGSERV_get_tpt_str(MSGSERV *p , char *str) {
+	return MSGSERVID_get_tpt_str(p->msgserv_id, str);
 }

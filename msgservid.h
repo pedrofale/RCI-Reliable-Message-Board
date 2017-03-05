@@ -42,8 +42,10 @@ char* MSGSERVID_get_ip_str(MSGSERVID*);
 
 void MSGSERVID_set_upt(MSGSERVID*, int);
 int MSGSERVID_get_upt(MSGSERVID*);
+int MSGSERVID_get_upt_str(MSGSERVID*, char*);
 
 void MSGSERVID_set_tpt(MSGSERVID*, int);
 int MSGSERVID_get_tpt(MSGSERVID*);
+int MSGSERVID_get_tpt_str(MSGSERVID*, char*);
 
 #endif
