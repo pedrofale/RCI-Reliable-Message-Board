@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 	//connect_udp();
 
 	/* create TCP server on port tpt */
-	connect_tcp();
+	//connect_tcp();
 
 	/* wait for input from the CLI */
 	while(1) {
