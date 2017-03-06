@@ -40,7 +40,7 @@
 
  	printf(">> Sent: %s\n", msg);
 
- 	// if(write_UDP(p->siip, p->siipt, msg) == -1) return -1;
+ 	// if(write_UDP(p->siip, p->sipt, msg) == -1) return -1;
  	return 0;
  }
 
@@ -50,8 +50,8 @@
  	int err = 0;
  	strcpy(msg, "GET_SERVERS");
 
- 	// if(write_UDP(p->siip, p->siipt, msg) == -1) err = -1;
- 	// if(read_UDP(p->siip, p->siipt, response) == -1) err = -2;
+ 	// if(write_UDP(p->siip, p->sipt, msg) == -1) err = -1;
+ 	// if(read_UDP(p->siip, p->sipt, response) == -1) err = -2;
  	strcpy(response, "yo these are the servers");
  	printf("%s\n", response);
 

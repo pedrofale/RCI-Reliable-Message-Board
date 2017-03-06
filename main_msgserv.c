@@ -35,7 +35,7 @@ MSGSERV *msgserv;
 
 void usage(char *);
 
-void init_msgserv_id(char **);
+void init_msgserv(char **);
 
 void print_id();
 
@@ -47,9 +47,8 @@ int main(int argc, char *argv[]) {
 	char user_input[BUFFSIZE];
 	int command = 0;
 
-	msgserv = MSGSERV_create();
 	parse_args(argv, argc, params);
-	init_msgserv_id(params);
+	init_msgserv(params);
 	print_id();
 
 
@@ -57,7 +56,7 @@ int main(int argc, char *argv[]) {
 	//connect_udp();
 
 	/* create TCP server on port tpt */
-	//connect_tcp();
+	connect_tcp();
 
 	/* wait for input from the CLI */
 	while(1) {
@@ -80,6 +79,11 @@ void parse_args(char **argv, int argc, char **params) {
 	    usage(argv[0]);
 		exit(0);
 	}
+
+	params[4] = "192.168.0.1"; // IP address of tejo.tecnico.ulisboa.pt
+	params[5] = "59000";
+	params[6] = "200";
+	params[7] = "10";
 
 	int option = 0;
 
@@ -108,8 +112,10 @@ void usage(char *prog_name) {
   return;
 }
 
-void init_msgserv_id(char **params) {
+void init_msgserv(char **params) {
 	char *p;
+	
+	msgserv = MSGSERV_create(params[6]);
 
 	if(MSGSERV_set_name(msgserv, params[0]) == -1) {
 		fprintf(stderr, "Error setting MSGSERVID name.\n");
@@ -121,6 +127,15 @@ void init_msgserv_id(char **params) {
 	}
 	MSGSERV_set_upt(msgserv, (int)strtol(params[2], &p, 10));
 	MSGSERV_set_tpt(msgserv, (int)strtol(params[3], &p, 10));
+
+	if(MSGSERV_set_siip_str(msgserv, params[4]) == -1) {
+		fprintf(stderr, "Error setting MSGSERV SIIP address from string.\n");
+		exit(-1);
+	}
+
+	MSGSERV_set_sipt(msgserv, (int)strtol(params[5], &p, 10));
+	MSGSERV_set_m(msgserv, (int)strtol(params[6], &p, 10));
+	MSGSERV_set_r(msgserv, (int)strtol(params[7], &p, 10));
 }
 
 void print_id() {
@@ -128,5 +143,9 @@ void print_id() {
 	printf("ip: %s\n", MSGSERV_get_ip_str(msgserv));
 	printf("upt: %d\n", MSGSERV_get_upt(msgserv));
 	printf("tpt: %d\n", MSGSERV_get_tpt(msgserv));
+	printf("siip: %s\n", MSGSERV_get_siip_str(msgserv));
+	printf("sipt: %d\n", MSGSERV_get_sipt(msgserv));
+	printf("m: %d\n", MSGSERV_get_m(msgserv));
+	printf("r: %d\n", MSGSERV_get_r(msgserv));
 }
 

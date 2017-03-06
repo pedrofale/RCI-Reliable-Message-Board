@@ -38,8 +38,10 @@ void MSGSERV_set_ID(MSGSERV*, MSGSERVID*);
 MSGSERVID* MSGSERV_get_ID(MSGSERV*);
 
 void MSGSERV_set_siip(MSGSERV*, struct in_addr);
+int MSGSERV_set_siip_str(MSGSERV*, char*);
 int MSGSERV_set_siip_dns(MSGSERV*, char*);
 struct in_addr MSGSERV_get_siip(MSGSERV*);
+char* MSGSERV_get_siip_str(MSGSERV *);
 char* MSGSERV_get_siip_dns(MSGSERV*);
 
 void MSGSERV_set_sipt(MSGSERV*, int);

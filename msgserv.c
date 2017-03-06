@@ -21,22 +21,32 @@
 
 #include "msgserv.h"
 
+#define MAX_MSG_LEN
+
+struct sMSG {
+	int lc;
+	char msg[MAX_MSG_LEN];
+};
+
 struct sMSGSERV {
 	MSGSERVID *msgserv_id;
 	struct in_addr siip;
 	int sipt;
 	int m;
 	int r;
+	struct sMSG *messages;
 };
 
-MSGSERV* MSGSERV_create() {
+MSGSERV* MSGSERV_create(int max_msgs) {
 	MSGSERV *ptr = malloc(sizeof(MSGSERV));
+	ptr->messages = malloc(max_msgs*sizeof(struct sMSG));
 	ptr->msgserv_id = MSGSERVID_create();
 	return ptr;
 }
 
 void MSGSERV_free(MSGSERV *p) {
 	MSGSERVID_free(p->msgserv_id);
+	free(p->messages);
 	free(p);
 }
 
@@ -52,6 +62,14 @@ void MSGSERV_set_siip(MSGSERV *p, struct in_addr ip) {
 	p->siip = ip;
 }
 
+int MSGSERV_set_siip_str(MSGSERV *p, char *siip_str) {
+	struct in_addr *a = malloc(sizeof(struct in_addr));
+	if (inet_aton(siip_str, a) == 0) { free(a); return -1; }
+	MSGSERV_set_siip(p, *a);
+	free(a);
+	return 0;
+}
+
 int MSGSERV_set_siip_dns(MSGSERV *p, char *dns) {
 	struct hostent *hostptr;
 	if((hostptr = gethostbyname(dns)) == NULL) return -1;
@@ -65,6 +83,10 @@ int MSGSERV_set_siip_dns(MSGSERV *p, char *dns) {
 
 struct in_addr MSGSERV_get_siip(MSGSERV *p ) {
 	return p->siip;
+}
+
+char* MSGSERV_get_siip_str(MSGSERV *p) {
+	return inet_ntoa(p->siip);
 }
 
 char* MSGSERV_get_siip_dns(MSGSERV *p) {
