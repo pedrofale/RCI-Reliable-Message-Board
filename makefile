@@ -20,7 +20,8 @@ OBJS =  \
  main_msgserv.o \
  msgservui.o \
  msgserv.o \
- msgservid.o
+ msgservid.o \
+ comm_utils.o
 
 # Here is a Make Macro defined by two Macro Expansions.
 # A Macro Expansion may be treated as a textual replacement of the Make Macro.
@@ -72,7 +73,8 @@ $(LINK_TARGET)	: $(OBJS)
 # The commands for making an out-of-date target up-to-date may be found elsewhere
 # (in this case, by the Pattern Rule above).
 # Dependency Rules are often used to capture header file dependencies.
-main_msgserv.o	: msgservui.h msgserv.h msgservid.h
-msgservui.o	: msgservui.h msgserv.h msgservid.h
+main_msgserv.o	: msgservui.h msgserv.h msgservid.h comm_utils.h
+msgservui.o	: msgservui.h msgserv.h msgservid.h comm_utils.h
 msgserv.o	: msgserv.h msgservid.h
 msgservid.o	: msgservid.h
+comm_utils.o	: comm_utils.h

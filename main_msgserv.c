@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include "msgserv.h"
 #include "msgservui.h"
+#include "comm_utils.h"
 
 #define BUFFSIZE 20
 
@@ -42,6 +43,7 @@ void print_id();
 void parse_args(char **, int, char **);
 
 int main(int argc, char *argv[]) {
+	SOCKET *idserv_socket;
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
 	char user_input[BUFFSIZE];
@@ -51,24 +53,25 @@ int main(int argc, char *argv[]) {
 	init_msgserv(params);
 	print_id();
 
-
 	/* create UDP server on port upt */
-	//connect_udp();
+	/* create socket to connect to ID server */
+	idserv_socket = create_udp_socket(MSGSERV_get_siip(msgserv), MSGSERV_get_sipt(msgserv));
 
 	/* create TCP server on port tpt */
 	//connect_tcp();
 
 	/* wait for input from the CLI */
 	while(1) {
-		/* main routines go here */
 		printf(">> ");
 		fgets(user_input, BUFFSIZE, stdin);
 		user_input[strcspn(user_input, "\n")] = '\0';
-		if(!strcmp(user_input, "join")) join(msgserv);
+		if(!strcmp(user_input, "join")) join(msgserv, idserv_socket);
 		if(!strcmp(user_input, "show_servers")) //show_servers();
 		if(!strcmp(user_input, "show_messages")) show_messages();
 		if(!strcmp(user_input, "exit")) { exitapp(); break; }
 	}
+
+	close_udp_socket(idserv_socket);
 
 	MSGSERV_free(msgserv);
 	exit(0);
@@ -80,8 +83,8 @@ void parse_args(char **argv, int argc, char **params) {
 		exit(0);
 	}
 
-	params[4] = "192.168.0.1"; // IP address of tejo.tecnico.ulisboa.pt
-	params[5] = "59000";
+	params[4] = "193.136.138.142"; // IP address of tejo.tecnico.ulisboa.pt
+	params[5] = "58000";
 	params[6] = "200";
 	params[7] = "10";
 

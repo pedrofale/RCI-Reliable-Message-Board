@@ -23,11 +23,12 @@
 #include <string.h>
 
 /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
- int join(MSGSERV *p) {
+ int join(MSGSERV *p, SOCKET *socket) {
  	char msg[MAX_MSG_LEN];
  	char aux[5];
   	char str[20];
-  		
+  	char resp[MAX_MSG_LEN];
+
  	strcpy(msg, "REG ");
  	strcpy(aux, ";");
 
@@ -38,9 +39,12 @@
  	MSGSERV_get_tpt_str(p, str);
  	strcat(msg, str);
 
+ 	if(sendmsg_udp(socket, msg) == -1) return -1;
  	printf(">> Sent: %s\n", msg);
 
- 	// if(write_UDP(p->siip, p->sipt, msg) == -1) return -1;
+ 	if(readmsg_udp(socket, resp) == -1) return -1;
+ 	printf(">> Received: %s\n", resp);
+
  	return 0;
  }
 
