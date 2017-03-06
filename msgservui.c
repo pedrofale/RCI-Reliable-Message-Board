@@ -39,28 +39,33 @@
  	MSGSERV_get_tpt_str(p, str);
  	strcat(msg, str);
 
- 	if(sendmsg_udp(socket, msg) == -1) return -1;
+ 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) return -1;
  	printf(">> Sent: %s\n", msg);
 
- 	if(readmsg_udp(socket, resp) == -1) return -1;
- 	printf(">> Received: %s\n", resp);
+ 	//if(readmsg_udp(socket, resp, sizeof(msg)) == -1) return -1;
+ 	//printf(">> Received: %s\n", resp);
 
  	return 0;
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int show_servers(MSGSERV *p, char *response) {
+ int show_servers(MSGSERV *p, SOCKET* socket) {
  	char msg[MAX_MSG_LEN];
+ 	char resp[MAX_MSG_LEN];
  	int err = 0;
  	strcpy(msg, "GET_SERVERS");
 
- 	// if(write_UDP(p->siip, p->sipt, msg) == -1) err = -1;
- 	// if(read_UDP(p->siip, p->sipt, response) == -1) err = -2;
- 	strcpy(response, "yo these are the servers");
- 	printf("%s\n", response);
+ 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
+ 	printf(">> Sent: %s\n", msg);
+
+ 	if(readmsg_udp(socket, resp, sizeof(msg)) == -1) err = -2;
+ 	printf(">> Received: %s\n", resp);
+
+ 	/* parse message from ID server to create a list of MSG servers */
 
  	return err;
  }
+
 
  int show_messages() {
  	return 0;

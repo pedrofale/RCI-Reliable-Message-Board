@@ -29,7 +29,7 @@
  int join(MSGSERV*, SOCKET*);
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- //int show_servers(MSGSERV*, char*);
+ int show_servers(MSGSERV*, SOCKET*);
 
  int show_messages();
 

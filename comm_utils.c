@@ -77,10 +77,10 @@
 
 
  // write to the sckt
- int sendmsg_udp(SOCKET *sckt, char *msg) {
+ int sendmsg_udp(SOCKET *sckt, char *msg, int msglen) {
  	int err = 0;
  	int n = 0;
- 	if(sendto(sckt->fd, msg, 128, 0, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1) {
+ 	if(sendto(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1) {
 		printf("error: %s\n", strerror(errno));
 		err = -1;
 	}
@@ -89,11 +89,11 @@
  }
 
  // read from the sckt
- int readmsg_udp(SOCKET *sckt, char *msg) {
+ int readmsg_udp(SOCKET *sckt, char *msg, int msglen) {
  	int err = 0;
  	int addrlen = sizeof(sckt->addr);
 
- 	if(recvfrom(sckt->fd, msg, 128, 0, (struct sockaddr*)&sckt->addr,&addrlen) == -1) {
+ 	if(recvfrom(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr,&addrlen) == -1) {
 		printf("error: %s\n",strerror(errno));
 		err = -1;
 	}

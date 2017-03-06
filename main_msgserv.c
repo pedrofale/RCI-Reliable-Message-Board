@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 		fgets(user_input, BUFFSIZE, stdin);
 		user_input[strcspn(user_input, "\n")] = '\0';
 		if(!strcmp(user_input, "join")) join(msgserv, idserv_socket);
-		if(!strcmp(user_input, "show_servers")) //show_servers();
+		if(!strcmp(user_input, "show_servers")) show_servers(msgserv, idserv_socket);
 		if(!strcmp(user_input, "show_messages")) show_messages();
 		if(!strcmp(user_input, "exit")) { exitapp(); break; }
 	}
@@ -84,7 +84,7 @@ void parse_args(char **argv, int argc, char **params) {
 	}
 
 	params[4] = "193.136.138.142"; // IP address of tejo.tecnico.ulisboa.pt
-	params[5] = "58000";
+	params[5] = "59000"; // echo server is at port 58000
 	params[6] = "200";
 	params[7] = "10";
 

@@ -22,6 +22,6 @@ SOCKET* create_udp_socket(struct in_addr ip, int port);
 
 int close_udp_socket(SOCKET *socket);
 
-int sendmsg_udp(SOCKET *socket, char *msg);
+int sendmsg_udp(SOCKET *socket, char *msg, int);
 
-int readmsg_udp(SOCKET *socket, char *msg);
+int readmsg_udp(SOCKET *socket, char *msg, int);
