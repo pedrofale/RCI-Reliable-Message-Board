@@ -42,9 +42,8 @@
  	return sckt->addr;
  }
 
- // create UDP sckt
- SOCKET* create_udp_socket(struct in_addr ip, int port) {
- 	int addrlen;
+ // create UDP sckt as a client of the server at ip
+ SOCKET* create_udp_client_socket(struct in_addr ip, int port) {
  	SOCKET* sckt;
 
  	// allocate memory for the SOCKET structure
@@ -64,11 +63,38 @@
 	sckt->addr.sin_family = AF_INET; // IPv4
 	sckt->addr.sin_port = htons((u_short)port);
 	sckt->addr.sin_addr.s_addr = ip.s_addr;
-
+	
 	return sckt;
  } 
 
+ // create UDP sckt as a server
+ SOCKET* create_udp_server_socket(int port) {
+ 	SOCKET* sckt;
 
+ 	// allocate memory for the SOCKET structure
+ 	sckt = malloc(sizeof(SOCKET));
+
+	// create an endpoint for communication via UDP using IPv4
+	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		printf("error: %s\n", strerror(errno));
+		sckt = NULL;
+	}
+
+	// fill the memory area pointed by the structure addr with \0
+	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
+		printf("error: %s\n", strerror(errno));
+	}
+
+	sckt->addr.sin_family = AF_INET; // IPv4
+	sckt->addr.sin_port = htons((u_short)port);
+	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr));
+	
+	return sckt;
+ }
+
+	
  int close_udp_socket(SOCKET *sckt) {
  	int err = 0;
  	close(sckt);

@@ -23,7 +23,7 @@
 #include "msgserv.h"
 #include "comm_utils.h"
 
-#define MAX_MSG_LEN 128
+#define MAX_MSG_LEN 200
 
  /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
  int join(MSGSERV*, SOCKET*);

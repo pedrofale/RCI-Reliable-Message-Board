@@ -44,6 +44,9 @@ void parse_args(char **, int, char **);
 
 int main(int argc, char *argv[]) {
 	SOCKET *idserv_socket;
+	SOCKET *terminal_socket;
+	SOCKET *msgserv_socket;
+
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
 	char user_input[BUFFSIZE];
@@ -53,12 +56,14 @@ int main(int argc, char *argv[]) {
 	init_msgserv(params);
 	print_id();
 
-	/* create UDP server on port upt */
-	/* create socket to connect to ID server */
-	idserv_socket = create_udp_socket(MSGSERV_get_siip(msgserv), MSGSERV_get_sipt(msgserv));
+	/* create UDP server socket on port upt to connect to RMB terminal */
+	terminal_socket = create_udp_server_socket(MSGSERV_get_upt(msgserv));
+
+	/* create UDP client socket to connect to ID server */
+	idserv_socket = create_udp_client_socket(MSGSERV_get_siip(msgserv), MSGSERV_get_sipt(msgserv));
 
 	/* create TCP server on port tpt */
-	//connect_tcp();
+	//msgserv_socket = create_tcp_socket(); FILIPE
 
 	/* wait for input from the CLI */
 	while(1) {
