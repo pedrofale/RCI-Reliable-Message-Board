@@ -1,3 +1,6 @@
+#ifndef _COMMUTILS_H_
+#define _COMMUTILS_H_
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -24,6 +27,8 @@ SOCKET* create_udp_server_socket(int port);
 
 int close_udp_socket(SOCKET *socket);
 
-int sendmsg_udp(SOCKET *socket, char *msg, int);
+int sendmsg_udp(SOCKET *socket, char *msg, int msglen);
 
-int readmsg_udp(SOCKET *socket, char *msg, int);
+int readmsg_udp(SOCKET *socket, char *msg, int msglen);
+
+#endif

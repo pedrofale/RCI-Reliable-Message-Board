@@ -18,12 +18,14 @@
  *		exit: exit the app
  *
  *****************************************************************************/
+#ifndef _MSGSERVUI_H_
+#define _MSGSERVUI_H_
 
 #include <string.h>
 #include "msgserv.h"
 #include "comm_utils.h"
 
-#define MAX_MSG_LEN 200
+#define MAX_MSG_LEN 400
 
  /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
  int join(MSGSERV*, SOCKET*);
@@ -34,3 +36,5 @@
  int show_messages();
 
  int exitapp();
+
+ #endif

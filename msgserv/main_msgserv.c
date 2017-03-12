@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
 	/* create TCP server on port tpt */
 	//msgserv_socket = create_tcp_socket(); FILIPE
 
+
 	/* wait for input from the CLI */
 	while(1) {
 		printf(">> ");

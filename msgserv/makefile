@@ -19,6 +19,7 @@ LINK_TARGET=msgserv
 OBJS =  \
  main_msgserv.o \
  msgservui.o \
+ comm_msgserv.o \
  msgserv.o \
  msgservid.o \
  comm_utils.o
@@ -75,6 +76,7 @@ $(LINK_TARGET)	: $(OBJS)
 # Dependency Rules are often used to capture header file dependencies.
 main_msgserv.o	: msgservui.h msgserv.h msgservid.h comm_utils.h
 msgservui.o	: msgservui.h msgserv.h msgservid.h comm_utils.h
+comm_msgserv.o	: comm_msgserv.h comm_utils.h msgserv.h
 msgserv.o	: msgserv.h msgservid.h
 msgservid.o	: msgservid.h
 comm_utils.o	: comm_utils.h

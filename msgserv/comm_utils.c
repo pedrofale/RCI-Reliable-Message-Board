@@ -1,21 +1,15 @@
 /******************************************************************************
- * File Name: udp_comm.c
+ * File Name: comm_utils.c
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
- *     udp_comm: utilities for communication via UDP
+ *     comm_utils: utilities for communication via UDP and TCP sockets
  *
  * DESCRIPTION
- *      Implementation of methods regardin sckt comm via UDP
+ *      Implementation of methods regarding socket communication via UDP and TCP
  *
  * METHODS
- *		join: register the server in the ID server
- *		show_servers: list the identities of all the other MSG servers this one
- *					  has a TCP session estabilished with
- *		show_messages: list all the messages this server has stored, ordered by
- *					   their LCs
- *		exit: exit the app
- *
+ 
  *****************************************************************************/
 
  #include "comm_utils.h"

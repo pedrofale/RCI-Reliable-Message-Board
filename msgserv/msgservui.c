@@ -40,10 +40,9 @@
  	strcat(msg, str);
 
  	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) return -1;
- 	printf(">> Sent: %s\n", msg);
 
- 	//if(readmsg_udp(socket, resp, sizeof(msg)) == -1) return -1;
- 	//printf(">> Received: %s\n", resp);
+ 	// DEBUG
+ 	printf(">> Sent: %s\n", msg);
 
  	return 0;
  }
@@ -56,9 +55,13 @@
  	strcpy(msg, "GET_SERVERS");
 
  	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
+
+ 	// DEBUG
  	printf(">> Sent: %s\n", msg);
 
  	if(readmsg_udp(socket, resp, sizeof(msg)) == -1) err = -2;
+ 	
+ 	// DEBUG
  	printf(">> Received: %s\n", resp);
 
  	/* parse message from ID server to create a list of MSG servers */

@@ -29,6 +29,10 @@
 #include <unistd.h>
 #include "msgservid.h"
 
+#define MAX_MSG_LEN 200
+#define MAX_NUM_MSGS 200
+
+typedef struct sMESSAGE MESSAGE;
 typedef struct sMSGSERV MSGSERV;
 
 MSGSERV* MSGSERV_create();
@@ -52,6 +56,34 @@ int MSGSERV_get_m(MSGSERV*);
 
 void MSGSERV_set_r(MSGSERV*, int);
 int MSGSERV_get_r(MSGSERV*);
+
+MESSAGE* MESSAGES_create(int);
+void MESSAGES_free(MSGSERV*);
+
+int MESSAGE_set_message_str(MESSAGE, char*);
+char* MESSAGE_get_message_str(MESSAGE);
+
+void MESSAGE_set_message_lc(MESSAGE, int);
+int MESSAGE_get_message_lc(MESSAGE);
+
+char* MSGSERV_get_message_str(MSGSERV*, int);
+int MSGSERV_set_message_str(MSGSERV*, char*, int);
+
+int MSGSERV_get_message_lc(MSGSERV*, int); 
+void MSGSERV_set_message_lc(MSGSERV*, int, int);
+
+int MSGSERV_set_message(MSGSERV*, MESSAGE, int);
+MESSAGE MSGSERV_get_message(MSGSERV*, int);
+
+int MSGSERV_get_num_messages(MSGSERV*);
+int MSGSERV_get_oldest_message_index(MSGSERV*); 
+int MSGSERV_get_latest_message_index(MSGSERV*);
+int MSGSERV_get_nth_latest_index(MSGSERV*, int);
+int MSGSERV_get_first_free_message_index(MSGSERV*);
+
+int MSGSERV_add_message(MSGSERV*, MESSAGE);
+int MSGSERV_add_message_str_lc(MSGSERV*, char*, int);
+
 
 int MSGSERV_set_name(MSGSERV*, char*);
 char* MSGSERV_get_name(MSGSERV*);
