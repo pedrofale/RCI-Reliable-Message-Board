@@ -183,7 +183,7 @@ int MSGSERV_get_message_lc(MSGSERV *msgserv, int i) {
 }
 
 void MSGSERV_set_message_lc(MSGSERV *msgserv, int lc, int i) {
-	MESSAGE_get_message_lc(msgserv->messages[i]);
+	msgserv->messages[i].lc = lc;
 }
 
 MESSAGE MSGSERV_get_message(MSGSERV *msgserv, int i) {
@@ -200,9 +200,9 @@ int MSGSERV_set_message(MSGSERV *msgserv, MESSAGE message, int i) {
 
 int MSGSERV_get_num_messages(MSGSERV *msgserv) {
 	int cnt = 0;
-	int max_index = msgserv->m;
+	int max_index = msgserv->m - 1;
 
-	for(int i = 0; i < max_index; i++) {
+	for(int i = 0; i <= max_index; i++) {
 		if(strcmp(msgserv->messages[i].msg, "")) // is not empty
 			cnt ++;
 	}
@@ -212,9 +212,9 @@ int MSGSERV_get_num_messages(MSGSERV *msgserv) {
 
 int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
 	int min_lc = msgserv->messages[0].lc;
-	int max_index = msgserv->m;
+	int max_index = msgserv->m - 1;
 
-	for(int i = 1; i < max_index; i++) {
+	for(int i = 1; i <= max_index; i++) {
 		if(msgserv->messages[i].lc <= min_lc) 
 			min_lc = msgserv->messages[i].lc;
 	}
@@ -224,9 +224,9 @@ int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
 
 int MSGSERV_get_latest_message_index(MSGSERV *msgserv) {
 	int max_lc = msgserv->messages[0].lc;
-	int max_index = msgserv->m;
+	int max_index = msgserv->m - 1;
 
-	for(int i = 1; i < max_index; i++) {
+	for(int i = 1; i <= max_index; i++) {
 		if(msgserv->messages[i].lc >= max_lc) 
 			max_lc = msgserv->messages[i].lc;
 	}
@@ -235,7 +235,7 @@ int MSGSERV_get_latest_message_index(MSGSERV *msgserv) {
 }
 
 int MSGSERV_get_nth_latest_index(MSGSERV *msgserv, int n) {
-	int max_index = msgserv->m;
+	int max_index = msgserv->m - 1;
 	int latest = MSGSERV_get_latest_message_index(msgserv);
 	int nth_latest = latest - n;
 
@@ -247,15 +247,15 @@ int MSGSERV_get_nth_latest_index(MSGSERV *msgserv, int n) {
 
 // returns index of oldest message if array is full
 int MSGSERV_get_first_free_message_index(MSGSERV *msgserv) {
-	int max_index = msgserv->m;
+	int max_index = msgserv->m -1;
 	int i = 0;
 
-	for(i = 0; i < max_index; i++) {
+	for(i = 0; i <= max_index; i++) {
 		if(!strcmp(msgserv->messages[i].msg, "")) // is empty
 			break;
 	}
 
-	if(!strcmp(msgserv->messages[i].msg, "")) // is empty
+	if(i == max_index && !strcmp(msgserv->messages[i].msg, "")) // is empty
 		i = MSGSERV_get_oldest_message_index(msgserv);
 
 	return i;

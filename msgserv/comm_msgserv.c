@@ -29,11 +29,11 @@ int read_from_terminal(SOCKET *sckt, MSGSERV *msgserv) {
 
 	readmsg_udp(sckt, msg, sizeof(msg));
 
-	if(!strncmp(msg, PUBLISH_MESSAGE, sizeof(PUBLISH_MESSAGE))) {
+	if(!strncmp(msg, PUBLISH_MESSAGE, strlen(PUBLISH_MESSAGE))) {
 		if(publish_message(msg, msgserv) == -1)
 			err = -1;
 	}
-	else if(!strncmp(msg, GET_MESSAGES, sizeof(GET_MESSAGES))) {
+	else if(!strncmp(msg, GET_MESSAGES, strlen(GET_MESSAGES))) {
 		if(get_messages(msg, sckt, msgserv) == -1)
 			err = -2;
 	}
@@ -48,8 +48,9 @@ int publish_message(char *buffer, MSGSERV *msgserv) {
 	int err = 0;
 	int lc = 0;
 
-	sscanf(buffer, "%*s %s", msg); // get message from buffer
-
+	sscanf(buffer, "%*s %[^\t\n]", msg); // get message from buffer
+	strcat(msg, "\n");
+	
 	MSGSERV_increment_lc(msgserv);
 	err = MSGSERV_add_message_str_lc(msgserv, msg, MSGSERV_get_lc(msgserv));
 
@@ -64,9 +65,12 @@ int get_messages(char *buffer, SOCKET *sckt, MSGSERV *msgserv) {
 	// get the number of wanted messages
 	sscanf(buffer, "%*s %d", &n);
 
+	if(n > MSGSERV_get_num_messages(msgserv))
+		n = MSGSERV_get_num_messages(msgserv);
+
 	strcpy(resp, "MESSAGES\n");
 
-	for(int i = n; i > 0; i++) {
+	for(int i = n; i > 0; i--) {
 		aux = MSGSERV_get_nth_latest_index(msgserv, i);
 		strcat(resp, MSGSERV_get_message_str(msgserv, aux));
 	}

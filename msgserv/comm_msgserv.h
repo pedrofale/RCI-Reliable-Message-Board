@@ -6,8 +6,11 @@
 
 #define MAX_BUFF_SIZE 500
 
-#define PUBLISH_MESSAGE "PUBLISH_MESSAGE "
+#define PUBLISH_MESSAGE "PUBLISH "
 #define GET_MESSAGES "GET_MESSAGES "
 #define MESSAGES "MESSAGES\n"
+
+int read_from_terminal(SOCKET *sckt, MSGSERV *msgserv);
+
 
 #endif

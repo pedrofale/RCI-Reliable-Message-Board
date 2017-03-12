@@ -25,12 +25,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "msgserv.h"
 #include "msgservui.h"
 #include "comm_utils.h"
 
 #define BUFFSIZE 20
+#define STDIN 0
 
 MSGSERV *msgserv;
 
@@ -47,10 +50,13 @@ int main(int argc, char *argv[]) {
 	SOCKET *terminal_socket;
 	SOCKET *msgserv_socket;
 
+	fd_set rfds;
+	int maxfd, counter;
+	int fd_idserv, fd_terminal, fd_msgserv;
+
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
 	char user_input[BUFFSIZE];
-	int command = 0;
 
 	parse_args(argv, argc, params);
 	init_msgserv(params);
@@ -65,21 +71,49 @@ int main(int argc, char *argv[]) {
 	/* create TCP server on port tpt */
 	//msgserv_socket = create_tcp_socket(); FILIPE
 
+	fd_idserv = SOCKET_get_fd(idserv_socket);
+	fd_terminal = SOCKET_get_fd(terminal_socket);
+	//fd_msgserv = SOCKET_get_fd(msgserv_socket);
 
 	/* wait for input from the CLI */
 	while(1) {
-		printf(">> ");
-		fgets(user_input, BUFFSIZE, stdin);
-		user_input[strcspn(user_input, "\n")] = '\0';
-		if(!strcmp(user_input, "join")) join(msgserv, idserv_socket);
-		if(!strcmp(user_input, "show_servers")) show_servers(msgserv, idserv_socket);
-		if(!strcmp(user_input, "show_messages")) show_messages();
-		if(!strcmp(user_input, "exit")) { exitapp(); break; }
+		
+		FD_ZERO(&rfds);
+		FD_SET(fd_terminal, &rfds);
+		//FD_SET(fd_msgserv, &rfds);
+		FD_SET(STDIN, &rfds);
+
+		//maxfd = (fd_terminal > fd_msgserv)?fd_terminal:fd_msgserv;
+		maxfd = fd_terminal;
+
+		if(select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL) <= 0) {
+			printf("Error on select()\n");
+			break;
+		}
+
+		if(FD_ISSET(fd_terminal, &rfds)) {
+			if(read_from_terminal(terminal_socket, msgserv) < 0) {
+				printf("Error reading from terminal socket\n");
+			}	
+		}
+		/*
+		if(FD_ISSET(SOCKET_get_fd(msgserv_socket), &rfds)) {
+
+		}
+		*/
+		if(FD_ISSET(STDIN, &rfds)) {
+			fgets(user_input, BUFFSIZE, stdin);
+			user_input[strcspn(user_input, "\n")] = '\0';
+			if(!strcmp(user_input, "join")) join(msgserv, idserv_socket);
+			if(!strcmp(user_input, "show_servers")) show_servers(msgserv, idserv_socket);
+			if(!strcmp(user_input, "show_messages")) show_messages();
+			if(!strcmp(user_input, "exit")) { exitapp(); break; }
+		}
 	}
 
 	close_udp_socket(idserv_socket);
-
 	MSGSERV_free(msgserv);
+	
 	exit(0);
 }
 
