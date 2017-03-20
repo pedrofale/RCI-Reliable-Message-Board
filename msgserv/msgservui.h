@@ -24,17 +24,18 @@
 #include <string.h>
 #include "msgserv.h"
 #include "comm_utils.h"
+#include "comm_msgserv.h"
 
 #define MAX_MSG_LEN 400
 
  /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
- int join(MSGSERV*, SOCKET*);
+ int MSGSERVUI_join(MSGSERV*, SOCKET*);
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int show_servers(MSGSERV*, SOCKET*);
+ int MSGSERVUI_show_servers(MSGSERV*, SOCKET*);
 
- int show_messages();
+ int MSGSERVUI_show_messages();
 
- int exitapp();
+ int MSGSERVUI_exit();
 
  #endif

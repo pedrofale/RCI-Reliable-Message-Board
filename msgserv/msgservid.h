@@ -48,4 +48,7 @@ void MSGSERVID_set_tpt(MSGSERVID*, int);
 int MSGSERVID_get_tpt(MSGSERVID*);
 int MSGSERVID_get_tpt_str(MSGSERVID*, char*);
 
+int MSGSERVID_set_ip_from_reg(MSGSERVID *p, char *reg_str);
+void MSGSERVID_set_tpt_from_reg(MSGSERVID *p, char *reg_str);
+
 #endif

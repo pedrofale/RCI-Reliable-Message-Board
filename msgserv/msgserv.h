@@ -57,6 +57,8 @@ int MSGSERV_get_m(MSGSERV*);
 void MSGSERV_set_r(MSGSERV*, int);
 int MSGSERV_get_r(MSGSERV*);
 
+void MSGSERV_set_lc(MSGSERV*, int);
+
 MESSAGE* MESSAGES_create(int);
 void MESSAGES_free(MSGSERV*);
 

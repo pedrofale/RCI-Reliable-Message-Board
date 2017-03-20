@@ -23,11 +23,10 @@
 #include <string.h>
 
 /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
- int join(MSGSERV *p, SOCKET *socket) {
- 	char msg[MAX_MSG_LEN];
- 	char aux[5];
-  	char str[20];
-  	char resp[MAX_MSG_LEN];
+ int MSGSERVUI_join(MSGSERV *p, SOCKET *socket) {
+ 	char msg[MAX_MSG_LEN] = "";
+ 	char aux[5] = "";
+  	char str[20] = "";
 
  	strcpy(msg, "REG ");
  	strcpy(aux, ";");
@@ -41,39 +40,55 @@
 
  	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) return -1;
 
- 	// DEBUG
- 	printf(">> Sent: %s\n", msg);
-
  	return 0;
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int show_servers(MSGSERV *p, SOCKET* socket) {
- 	char msg[MAX_MSG_LEN];
- 	char resp[MAX_MSG_LEN];
+ int MSGSERVUI_show_servers(MSGSERV *p, SOCKET* socket) {
+ 	char msg[MAX_MSG_LEN] = "";
+ 	char resp[MAX_MSG_LEN] = "";
  	int err = 0;
  	strcpy(msg, "GET_SERVERS");
 
  	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
 
- 	// DEBUG
- 	printf(">> Sent: %s\n", msg);
-
- 	if(readmsg_udp(socket, resp, sizeof(msg)) == -1) err = -2;
+ 	if(readmsg_udp(socket, resp, sizeof(resp)) == -1) err = -2;
  	
- 	// DEBUG
- 	printf(">> Received: %s\n", resp);
+ 	printf("%s\n", resp);
 
- 	/* parse message from ID server to create a list of MSG servers */
+ 	/* parse response from ID server to create a list of MSG servers */
+ 	// if this is the only server, do nothing
+ 	// if there are other servers, ask one of them (eg: the first that 
+ 	// isn't this one) for the messages
 
  	return err;
  }
 
 
- int show_messages() {
- 	return 0;
+ int MSGSERVUI_show_messages(MSGSERV *p) {
+ 	char msg[MAX_MSG_LEN] = "";
+ 	int err = 0;
+ 	int aux, n, lc;
+ 	char lcstr[10];
+
+ 	n = MSGSERV_get_num_messages(p);
+
+	strcpy(msg, MESSAGES);
+
+	for(int i = n; i > 0; i--) {
+		aux = MSGSERV_get_nth_latest_index(p, i);
+		lc = MSGSERV_get_message_lc(p, aux);
+		sprintf(lcstr, "%d", lc);
+		strcat(msg, lcstr);
+		strcat(msg, ";");
+		strcat(msg, MSGSERV_get_message_str(p, aux));
+	}
+
+	printf("%s\n", msg);
+
+ 	return err;
  }
 
- int exitapp() {
+ int MSGSERVUI_exit() {
  	return 0;
  }

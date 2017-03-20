@@ -93,3 +93,28 @@ int MSGSERVID_get_tpt(MSGSERVID* p) {
 int MSGSERVID_get_tpt_str(MSGSERVID* p, char* str) {
 	return sprintf(str, "%d", p->tpt);
 }
+
+int MSGSERVID_set_ip_from_reg(MSGSERVID *p, char *reg_str) {
+	char dummy[128] = "";
+ 	char ip[20] = "";
+
+ 	sscanf(reg_str, "%[^';'];%[^';']", dummy, ip);
+
+ 	if(MSGSERVID_set_ip_str(p, ip) == -1) 
+ 		return -1;
+
+ 	return 0;
+}
+
+void MSGSERVID_set_tpt_from_reg(MSGSERVID *p, char *reg_str) {
+	char dummy[128] = "";
+ 	char ip[20] = "";
+ 	char tptstr[10]  = "";
+ 	char uptstr[10] = "";
+ 	int tpt;
+
+ 	sscanf(reg_str, "%[^';'];%[^';'];%[^';'];%[^';']", dummy, ip, uptstr, tptstr);
+ 	tpt = atoi(tptstr);
+
+ 	MSGSERVID_set_tpt(p, tpt);
+}

@@ -143,7 +143,7 @@ MESSAGE* MESSAGES_create(int max_msgs) {
 	for(int i = 0; i < max_msgs; i++) {
 		messages[i].msg = malloc(MAX_MSG_LEN);
 		strcpy(messages[i].msg, "");
-		messages[i].lc = -1;
+		messages[i].lc = 0;
 	}
 
 	return messages;
@@ -211,33 +211,33 @@ int MSGSERV_get_num_messages(MSGSERV *msgserv) {
 }
 
 int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
-	int min_lc = msgserv->messages[0].lc;
+	int min_lc_index = 0;
 	int max_index = msgserv->m - 1;
 
 	for(int i = 1; i <= max_index; i++) {
-		if(msgserv->messages[i].lc <= min_lc) 
-			min_lc = msgserv->messages[i].lc;
+		if(msgserv->messages[i].lc <= msgserv->messages[min_lc_index].lc) 
+			min_lc_index = i;
 	}
 
-	return min_lc;
+	return min_lc_index;
 }
 
 int MSGSERV_get_latest_message_index(MSGSERV *msgserv) {
-	int max_lc = msgserv->messages[0].lc;
+	int max_lc_index = 0;
 	int max_index = msgserv->m - 1;
 
 	for(int i = 1; i <= max_index; i++) {
-		if(msgserv->messages[i].lc >= max_lc) 
-			max_lc = msgserv->messages[i].lc;
+		if(msgserv->messages[i].lc >= msgserv->messages[max_lc_index].lc)
+			max_lc_index = i;
 	}
 
-	return max_lc;
+	return max_lc_index;
 }
 
 int MSGSERV_get_nth_latest_index(MSGSERV *msgserv, int n) {
 	int max_index = msgserv->m - 1;
 	int latest = MSGSERV_get_latest_message_index(msgserv);
-	int nth_latest = latest - n;
+	int nth_latest = latest - (n-1);
 
 	if(nth_latest < 0)
 		nth_latest = max_index - n;

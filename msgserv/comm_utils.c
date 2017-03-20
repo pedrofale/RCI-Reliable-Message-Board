@@ -36,6 +36,11 @@
  	return sckt->addr;
  }
 
+
+/****************************************************
+ * UDP methods
+ ****************************************************/
+
  // create UDP sckt as a client of the server at ip
  SOCKET* create_udp_client_socket(struct in_addr ip, int port) {
  	SOCKET* sckt;
@@ -91,7 +96,7 @@
 	
  int close_udp_socket(SOCKET *sckt) {
  	int err = 0;
- 	close(sckt);
+ 	close(sckt->fd);
  	free(sckt);
  }
 
@@ -113,7 +118,164 @@
  	int err = 0;
  	int addrlen = sizeof(sckt->addr);
 
- 	if(recvfrom(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr,&addrlen) == -1) {
+ 	if(recvfrom(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, &addrlen) == -1) {
+		printf("error: %s\n",strerror(errno));
+		err = -1;
+	}
+
+	return err;
+ }
+
+
+/****************************************************
+ * TCP methods
+ ****************************************************/
+
+ // create TCP sckt as a client of the server at ip
+ SOCKET* create_tcp_client_socket(struct in_addr ip, int port, int timeout) {
+ 	SOCKET* sckt;
+
+ 	struct timeval Timeout;
+    Timeout.tv_sec = timeout;
+    Timeout.tv_usec = 0;
+
+ 	// allocate memory for the SOCKET structure
+ 	sckt = malloc(sizeof(SOCKET));
+
+	// create an endpoint for communication via TCP using IPv4
+	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		printf("error: %s\n", strerror(errno));
+		sckt = NULL;
+	}
+
+	// fill the memory area pointed by the structure addr with \0
+	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
+		printf("error: %s\n", strerror(errno));
+	}
+
+	sckt->addr.sin_family = AF_INET; // IPv4
+	sckt->addr.sin_port = htons((u_short)port);
+	sckt->addr.sin_addr.s_addr = ip.s_addr;
+	
+	long arg; 
+	// Set non-blocking 
+	arg = fcntl(sckt->fd, F_GETFL, NULL); 
+	arg |= O_NONBLOCK; 
+	fcntl(sckt->fd, F_SETFL, arg); 
+	   
+    if(connect(sckt->fd, (struct sockaddr*)&sckt->addr,sizeof(sckt->addr)) < 0){
+    	socklen_t lon; 
+    	fd_set myset;
+    	int valopt;
+		if(errno == EINPROGRESS) {
+			FD_ZERO(&myset); 
+	        FD_SET(sckt->fd, &myset); 
+	        if (select(sckt->fd+1, NULL, &myset, NULL, &Timeout) > 0) { 
+	           lon = sizeof(int); 
+	           getsockopt(sckt->fd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon); 
+	           if (valopt) { 
+	              fprintf(stderr, "Error in connection() %d - %s\n", valopt, strerror(valopt));
+	              sckt = NULL; 
+	           } 
+	        } 
+	        else { 
+	           fprintf(stderr, "Timeout or error() %d - %s\n", valopt, strerror(valopt));  
+	           sckt = NULL;
+	        } 
+		}
+		else { 
+	        fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));  
+	        sckt = NULL;
+     	}
+	}
+
+	if(sckt != NULL) {
+		arg = fcntl(sckt->fd, F_GETFL, NULL); 
+		arg &= (~O_NONBLOCK); 
+	    fcntl(sckt->fd, F_SETFL, arg);
+	}
+
+	return sckt;
+ } 
+
+ // create TCP sckt as a server
+ SOCKET* create_tcp_server_socket(int port) {
+ 	SOCKET* sckt;
+ 	SOCKET* new_sckt;
+
+ 	// allocate memory for the SOCKET structure
+ 	sckt = malloc(sizeof(SOCKET));
+
+	// create an endpoint for communication via TCP using IPv4
+	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		printf("error: %s\n", strerror(errno));
+		sckt = NULL;
+	}
+
+	// fill the memory area pointed by the structure addr with \0
+	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
+		printf("error: %s\n", strerror(errno));
+	}
+
+	sckt->addr.sin_family = AF_INET; // IPv4
+	sckt->addr.sin_port = htons((u_short)port);
+	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr))==-1){
+		printf("error: %s\n", strerror(errno));
+	}
+
+	if(listen(sckt->fd,5)==-1){
+		printf("error: %s\n", strerror(errno));			
+	}	
+
+	return sckt;
+ }
+
+
+SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
+	SOCKET* new_sckt;
+	int addrlen = 0;
+
+	new_sckt = malloc(sizeof(SOCKET));
+
+	//new_sckt->addr.sin_family = sckt->addr.sin_family;
+	//new_sckt->addr.sin_port = sckt->addr.sin_port;
+	//new_sckt->addr.sin_addr.s_addr = sckt->addr.sin_addr.s_addr;
+
+	addrlen = sizeof(new_sckt->addr);
+	new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen);
+	if(new_sckt->fd == -1){
+		printf("error: %s\n", strerror(errno));			
+	}
+
+	return new_sckt;
+}
+	
+ int close_tcp_socket(SOCKET *sckt) {
+ 	int err = 0;
+ 	close(sckt->fd);
+ 	free(sckt);
+ }
+
+
+ // write to the sckt
+ int writemsg_tcp(SOCKET *sckt, char *msg, int msglen) {
+ 	int err = 0;
+ 	int n = 0;
+ 	if(write(sckt->fd, msg, msglen) == -1) {
+		printf("error: %s\n", strerror(errno));
+		err = -1;
+	}
+
+	return err;
+ }
+
+ // read from the sckt
+ int readmsg_tcp(SOCKET *sckt, char *msg, int msglen) {
+ 	int err = 0;
+
+ 	if(read(sckt->fd, msg, msglen) == -1) {
 		printf("error: %s\n",strerror(errno));
 		err = -1;
 	}
