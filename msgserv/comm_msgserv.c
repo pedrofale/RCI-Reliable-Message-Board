@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * File Name: comm_msgserv.c
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
@@ -76,7 +76,11 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
 					MSGSERVID_set_ip_from_reg(msgserv_id, temp_str);
 					MSGSERVID_set_tpt_from_reg(msgserv_id, temp_str);
 		  			printf("Connecting to... %s\n", temp_str);
-		  			msgserv_clientsockets[num_msgservs - 1] = create_tcp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_tpt(msgserv_id), TIMEOUT);
+		  			if(MSGSERVID_get_tpt(msgserv_id) == 56000 || MSGSERVID_get_tpt(msgserv_id) == 56001 || MSGSERVID_get_tpt(msgserv_id) == 56002)
+		  				msgserv_clientsockets[num_msgservs - 1] = create_tcp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_tpt(msgserv_id), TIMEOUT);
+		  			else 
+		  				msgserv_clientsockets[num_msgservs - 1] = NULL;
+		  			printf("done\n");
 		  			MSGSERVID_free(msgserv_id);
 	  			}
 	  			free(temp_str);
@@ -96,7 +100,7 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
  *	- MSG server to terminal: MESSAGES\n(message\n)*
  */
 
-int read_from_terminal(SOCKET *sckt, MSGSERV *msgserv, SOCKET *msgserv_clientsockets[], int num_msgservs, char *new_message) {
+int read_from_terminal(SOCKET *sckt, MSGSERV *msgserv, SOCKET *msgserv_clientsockets[], int num_msgservs) {
 	int err = 0;
 	char msg[MAX_BUFF_SIZE] = "";
 
@@ -174,19 +178,19 @@ int read_from_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 	int err = 0;
 	char msg[MAX_BUFF_SIZE] = "";
 
-
-	readmsg_tcp(sckt, msg, sizeof(msg));
+	if(readmsg_tcp(sckt, msg, MAX_BUFF_SIZE) == -1)
+		return -1;
 
 	if(!strncmp(msg, SGET_MESSAGES, strlen(SGET_MESSAGES))) {
 		if(send_messages_to_msgserv(msg, sckt, msgserv) == -1)
-			err = -1;
+			err = -2;
 	}
 	else if(!strncmp(msg, SMESSAGES, strlen(SMESSAGES))) {
 		if(COMMMSGSERV_add_smessages(msgserv, msg) == -1)
-			err = -2;
+			err = -3;
 	}
 	else {
-		err = -3;
+		err = -4;
 		fprintf(stderr, "Error: unrecognized request from a message server.\n");
 	}
 
@@ -291,26 +295,22 @@ int COMMMSGSERV_request_messages_for_msgserv(SOCKET *sckt[], int num_msgservs, M
 	char resp[MAX_BUFF_SIZE] = "";
 	int err = 0;
 
-	struct timeval tv;
-	tv.tv_sec = TIMEOUT;  /* Secs Timeout */
-	tv.tv_usec = 0;  // Not init'ing this can cause strange errors
-	
 	for(int i = 0; i < num_msgservs; i++) {
 		if(sckt[i] != NULL) {
-			if(writemsg_tcp(sckt[i], SGET_MESSAGES, sizeof(SGET_MESSAGES)) == -1) {
+			printf("asking server no.%d for messages...\n", i);
+			if(writemsg_tcp(sckt[i], SGET_MESSAGES, MAX_BUFF_SIZE) == -1) {
 				err = -1;
 				fprintf(stderr, "Error: error requesting message server for messages.\n");
 			}
-			setsockopt(SOCKET_get_fd(sckt[i]), SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
-			if(readmsg_tcp(sckt[i], resp, sizeof(resp)) == -1) {
+			printf("receiving messages...\n");
+			if(readmsg_tcp(sckt[i], resp, MAX_BUFF_SIZE) == -1) {
 				err = -2;
 				fprintf(stderr, "Error: error receiving message list.\n");
 			}
-			break;
 		}
 	}
 
-	printf("%s\n", resp);
+	printf("Message list:\n%s\n", resp);
 	
 	// Parse messages from response string and store them in this MSG server
 	if(COMMMSGSERV_add_smessages(msgserv, resp) == -1) {

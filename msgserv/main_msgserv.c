@@ -63,18 +63,20 @@ int main(int argc, char *argv[]) {
 	int fd_idserv_client, fd_terminal_server, fd_msgserv_server;
 	int num_msgservs = 0;
 	int err = 0;
+
+	struct timeval* timeout;
+
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
 	char user_input[BUFFSIZE];
 	char server_list[BUFFSIZE] = "";
-	char new_message[BUFFSIZE];
 	int new_message_lc;
 
 	parse_args(argv, argc, params);
 	init_msgserv(params);
 
 	// server refresh time
-	struct timeval* timeout = malloc(sizeof(struct timeval));
+	timeout = malloc(sizeof(struct timeval));
 	set_timeout(timeout, MSGSERV_get_r(msgserv));
 
 	/* create UDP server socket on port upt to connect to RMB terminal */
@@ -85,6 +87,7 @@ int main(int argc, char *argv[]) {
 
 	/* create TCP server on port tpt */
 	msgserv_serversocket = create_tcp_server_socket(MSGSERV_get_tpt(msgserv));
+	if(msgserv_serversocket == NULL) err = -1;
 
 	/* count number of MSG servers registered in the ID server */
 	num_msgservs = COMMMSGSERV_get_server_list(idserv_clientsocket, server_list, sizeof(server_list));
@@ -94,13 +97,14 @@ int main(int argc, char *argv[]) {
 		fd_msgserv_client = malloc(num_msgservs*sizeof(int));
 		/* estabilish TCP session with all MSG servers available in the ID server */
 		COMMMSGSERV_connect_msgservs(msgserv_socketarray, server_list);
-		/* Get all the messages from another MSG server (eg the first on the list) */
+		/* get all the messages from another MSG server (eg the first on the list) */
 		COMMMSGSERV_request_messages_for_msgserv(msgserv_socketarray, num_msgservs, msgserv);
 	}
 
 	fd_idserv_client = SOCKET_get_fd(idserv_clientsocket);
 	fd_terminal_server = SOCKET_get_fd(terminal_serversocket);
-	fd_msgserv_server = SOCKET_get_fd(msgserv_serversocket);
+	if(msgserv_serversocket != NULL)
+		fd_msgserv_server = SOCKET_get_fd(msgserv_serversocket);
 
 	/* wait for something to happen */
 	while(err == 0) {
@@ -128,25 +132,28 @@ int main(int argc, char *argv[]) {
 			printf("error: %s\n", strerror(errno));
 			break;
 		} else if(counter == 0) {
+			printf("joining\n");
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
 			set_timeout(timeout, MSGSERV_get_r(msgserv));
 		}
 
 		if(FD_ISSET(fd_terminal_server, &rfds)) {
-			if(read_from_terminal(terminal_serversocket, msgserv, msgserv_socketarray, num_msgservs, new_message) < 0) {
+			if(read_from_terminal(terminal_serversocket, msgserv, msgserv_socketarray, num_msgservs) < 0) {
 				printf("Error reading from terminal socket\n");
 			}
 		}
 
 		if(FD_ISSET(fd_msgserv_server, &rfds)) {
 			num_msgservs++;
-
+			printf("fd_msgserv_server activated\n");
 			msgserv_socketarray = realloc(msgserv_socketarray, num_msgservs);
-			if(msgserv_socketarray == NULL) {
+			fd_msgserv_client = realloc(fd_msgserv_client, num_msgservs);
+			if(msgserv_socketarray == NULL || fd_msgserv_client == NULL) {
 				printf("Error on realloc()\n");
 				break;
 			}
 			msgserv_socketarray[num_msgservs - 1] = accept_tcp_server_socket(msgserv_serversocket);
+			printf("accepted connection\n");
 
 			if(read_from_msgserv(msgserv_socketarray[num_msgservs - 1], msgserv) < 0) {
 				printf("Error reading from message server socket\n");
@@ -170,7 +177,7 @@ int main(int argc, char *argv[]) {
 			if(!strcmp(user_input, "exit\n")) { MSGSERVUI_exit(); break; }
 		}
 	}
-
+	printf("out of the loop\n");
 	if(num_msgservs > 0) {
 		for(int i = 0; i < num_msgservs; i++) {
 			if(fd_msgserv_client[i] != NULL)
@@ -231,8 +238,9 @@ void usage(char *prog_name) {
 
 void init_msgserv(char **params) {
 	char *p;
-	
-	msgserv = MSGSERV_create(params[6]);
+	int m = (int)strtol(params[6], &p, 10);
+
+	msgserv = MSGSERV_create(m);
 
 	if(MSGSERV_set_name(msgserv, params[0]) == -1) {
 		fprintf(stderr, "Error setting MSGSERVID name.\n");
@@ -251,7 +259,7 @@ void init_msgserv(char **params) {
 	}
 
 	MSGSERV_set_sipt(msgserv, (int)strtol(params[5], &p, 10));
-	MSGSERV_set_m(msgserv, (int)strtol(params[6], &p, 10));
+	MSGSERV_set_m(msgserv, m);
 	MSGSERV_set_r(msgserv, (int)strtol(params[7], &p, 10));
 }
 
