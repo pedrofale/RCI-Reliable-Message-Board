@@ -62,10 +62,10 @@ void MSGSERV_set_siip(MSGSERV *p, struct in_addr ip) {
 }
 
 int MSGSERV_set_siip_str(MSGSERV *p, char *siip_str) {
-	struct in_addr *a = malloc(sizeof(struct in_addr));
-	if (inet_aton(siip_str, a) == 0) { free(a); return -1; }
-	MSGSERV_set_siip(p, *a);
-	free(a);
+	struct in_addr a;
+	if (inet_aton(siip_str, &a) == 0) { 
+		return -1; }
+	MSGSERV_set_siip(p, a);
 	return 0;
 }
 

@@ -45,6 +45,14 @@
  	return have_same_addr;
  }
 
+ int SOCKET_close(SOCKET *sckt) {
+ 	int err = 0;
+ 	if(sckt != NULL) {
+	 	close(sckt->fd);
+	 	free(sckt);
+	 }
+ }
+
 
 /****************************************************
  * UDP methods
@@ -55,17 +63,23 @@
  	SOCKET* sckt;
 
  	// allocate memory for the SOCKET structure
- 	sckt = malloc(sizeof(SOCKET));
+ 	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
+ 		fprintf(stderr, "error: malloc() failed\n");
+ 		return NULL;
+ 	} 
 
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		printf("error: %s\n", strerror(errno));
-		sckt = NULL;
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		free(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		printf("error: %s\n", strerror(errno));
+		fprintf(stderr, "error: memset() failed\n");
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	sckt->addr.sin_family = AF_INET; // IPv4
@@ -80,35 +94,36 @@
  	SOCKET* sckt;
 
  	// allocate memory for the SOCKET structure
- 	sckt = malloc(sizeof(SOCKET));
+ 	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
+ 		fprintf(stderr, "error: malloc() failed\n");
+ 		return NULL;
+ 	} 
 
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		printf("error: %s\n", strerror(errno));
-		sckt = NULL;
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		free(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		printf("error: %s\n", strerror(errno));
+		fprintf(stderr, "error: memset() failed\n");
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	sckt->addr.sin_family = AF_INET; // IPv4
 	sckt->addr.sin_port = htons((u_short)port);
 	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr));
+	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		SOCKET_close(sckt);
+		return NULL;
+	}
 	
 	return sckt;
- }
-
-	
- int close_udp_socket(SOCKET *sckt) {
- 	int err = 0;
- 	if(sckt != NULL) {
-	 	close(sckt->fd);
-	 	free(sckt);
-	 }
  }
 
 
@@ -117,7 +132,7 @@
  	int err = 0;
  	int n = 0;
  	if(sendto(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1) {
-		printf("error: %s\n", strerror(errno));
+		fprintf(stderr, "error: %s\n", strerror(errno));
 		err = -1;
 	}
 
@@ -130,7 +145,7 @@
  	int addrlen = sizeof(sckt->addr);
 
  	if(recvfrom(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, &addrlen) == -1) {
-		printf("error: %s\n",strerror(errno));
+		fprintf(stderr, "error: %s\n",strerror(errno));
 		err = -1;
 	}
 
@@ -151,17 +166,23 @@
     Timeout.tv_usec = 0;
 
  	// allocate memory for the SOCKET structure
- 	sckt = malloc(sizeof(SOCKET));
+ 	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
+ 		fprintf(stderr, "error: malloc() failed\n");
+ 		return NULL;
+ 	} 
 
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt = NULL;
+		free(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "error: memset() failed\n");
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	sckt->addr.sin_family = AF_INET; // IPv4
@@ -170,46 +191,9 @@
 
 	if(connect(sckt->fd, (struct sockaddr*)&sckt->addr,sizeof(sckt->addr)) == -1){
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt = NULL;
+		SOCKET_close(sckt);
+		return NULL;
 	}
-
-	// long arg; 
-	// // Set non-blocking 
-	// arg = fcntl(sckt->fd, F_GETFL, NULL); 
-	// arg |= O_NONBLOCK; 
-	// fcntl(sckt->fd, F_SETFL, arg); 
-	   
- //    if(connect(sckt->fd, (struct sockaddr*)&sckt->addr,sizeof(sckt->addr)) < 0){
- //    	socklen_t lon; 
- //    	fd_set myset;
- //    	int valopt;
-	// 	if(errno == EINPROGRESS) {
-	// 		FD_ZERO(&myset); 
-	//         FD_SET(sckt->fd, &myset); 
-	//         if (select(sckt->fd+1, NULL, &myset, NULL, &Timeout) > 0) { 
-	//            lon = sizeof(int); 
-	//            getsockopt(sckt->fd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon); 
-	//            if (valopt) { 
-	//               fprintf(stderr, "Error in connection() %d - %s\n", valopt, strerror(valopt));
-	//               sckt = NULL; 
-	//            } 
-	//         } 
-	//         else { 
-	//            fprintf(stderr, "Timeout or error() %d - %s\n", valopt, strerror(valopt));  
-	//            sckt = NULL;
-	//         } 
-	// 	}
-	// 	else { 
-	//         fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));  
-	//         sckt = NULL;
- //     	}
-	// }
-
-	// if(sckt != NULL) {
-	// 	arg = fcntl(sckt->fd, F_GETFL, NULL); 
-	// 	arg &= (~O_NONBLOCK); 
-	//     fcntl(sckt->fd, F_SETFL, arg);
-	// }
 
 	return sckt;
  } 
@@ -217,21 +201,25 @@
  // create TCP sckt as a server
  SOCKET* create_tcp_server_socket(int port) {
  	SOCKET* sckt;
- 	SOCKET* new_sckt;
 
  	// allocate memory for the SOCKET structure
- 	sckt = malloc(sizeof(SOCKET));
+ 	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
+ 		fprintf(stderr, "error: malloc() failed\n");
+ 		return NULL;
+ 	} 
 
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		printf("error: %s\n", strerror(errno));
-		sckt = NULL;
+		fprintf(stderr, "error: %s\n", strerror(errno));
+		free(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		printf("error: %s\n", strerror(errno));
-		sckt = NULL;
+		fprintf(stderr, "error: memset() failed\n");
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	sckt->addr.sin_family = AF_INET; // IPv4
@@ -239,14 +227,15 @@
 	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
-		printf("error: %s\n", strerror(errno));
-		sckt = NULL;
-		return sckt;
+		printf(stderr, "error: %s\n", strerror(errno));
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	if(listen(sckt->fd, 5) == -1){
-		printf("error: %s\n", strerror(errno));		
-		sckt = NULL;	
+		printf(stderr, "error: %s\n", strerror(errno));		
+		SOCKET_close(sckt);
+		return NULL;	
 	}	
 
 	return sckt;
@@ -257,29 +246,25 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 	SOCKET* new_sckt;
 	int addrlen = 0;
 
-	new_sckt = malloc(sizeof(SOCKET));
+	if((new_sckt = malloc(sizeof(SOCKET))) == NULL) {
+ 		fprintf(stderr, "error: malloc() failed\n");
+ 		return NULL;
+ 	} 
 
 	//new_sckt->addr.sin_family = sckt->addr.sin_family;
 	//new_sckt->addr.sin_port = sckt->addr.sin_port;
 	//new_sckt->addr.sin_addr.s_addr = sckt->addr.sin_addr.s_addr;
 
 	addrlen = sizeof(new_sckt->addr);
-	new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen);
-	if(new_sckt->fd == -1){
-		printf("error: %s\n", strerror(errno));			
+	
+	if((new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen)) == -1) {
+		printf("error: %s\n", strerror(errno));
+		SOCKET_close(sckt);		
+		return NULL;	
 	}
 
 	return new_sckt;
 }
-	
- int close_tcp_socket(SOCKET *sckt) {
- 	int err = 0;
- 	if(sckt != NULL) {
-	 	close(sckt->fd);
-	 	free(sckt);
-	 }
- }
-
 
  // write to the sckt
  int writemsg_tcp(SOCKET *sckt, char *msgptr, int msglen) {
@@ -291,7 +276,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
  	
  	while(nleft > 0) {
  		if((nwritten = write(sckt->fd, msgptr, nleft)) < 0) {
-			printf("error: %s\n", strerror(errno));
+			fprintf(stderr, "error: %s\n", strerror(errno));
 			err = -1;
 			break;
 		}
@@ -304,7 +289,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 
  // read from the sckt
  int readmsg_tcp(SOCKET *sckt, char *msgptr, int msglen) {
- 	int err = 0;
+ 	int err = 1;
  	int nbytes, nleft, nread;
 
  	nbytes = msglen;
@@ -312,12 +297,14 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 
  	while(nleft > 0) {
 	 	if((nread = read(sckt->fd, msgptr, nleft)) == -1) {
-			printf("error: %s\n",strerror(errno));
-			err = -1;
+			fprintf(stderr, "error: %s\n",strerror(errno));
+			err = nread;
 			break;
 		}
-		else if(nread == 0) // closed by peer
+		else if(nread == 0) { // closed by peer
+			err = nread;
 			break;
+		}
 		nleft = nleft - nread;
 		msgptr = msgptr + nread; 
 	}

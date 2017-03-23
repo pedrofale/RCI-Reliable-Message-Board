@@ -85,7 +85,7 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
 	  			}
 	  			free(temp_str);
 	  		}
-	  		else printf("malloc() failed\n");
+	  		else fprintf(stderr, "Error: malloc() failed\n");
 	  	}
   		cnt++;
       	curr_line = next_line ? (next_line + 1) : NULL;
@@ -176,21 +176,22 @@ int send_messages_to_terminal(char *buffer, SOCKET *sckt, MSGSERV *msgserv) {
 
 int read_from_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 	int err = 0;
+	int ret = 0;
 	char msg[MAX_BUFF_SIZE] = "";
 
-	if(readmsg_tcp(sckt, msg, MAX_BUFF_SIZE) == -1)
-		return -1;
+	if((ret = readmsg_tcp(sckt, msg, MAX_BUFF_SIZE)) <= 0)
+		return ret;
 
 	if(!strncmp(msg, SGET_MESSAGES, strlen(SGET_MESSAGES))) {
 		if(send_messages_to_msgserv(msg, sckt, msgserv) == -1)
-			err = -2;
+			err = -1;
 	}
 	else if(!strncmp(msg, SMESSAGES, strlen(SMESSAGES))) {
 		if(COMMMSGSERV_add_smessages(msgserv, msg) == -1)
-			err = -3;
+			err = -1;
 	}
 	else {
-		err = -4;
+		err = 1;
 		fprintf(stderr, "Error: unrecognized request from a message server.\n");
 	}
 
@@ -249,7 +250,7 @@ int COMMMSGSERV_add_smessages(MSGSERV *msgserv, char *string) {
 		  		}
 	  		}
 	  		else {
-	  			printf("malloc() failed\n");
+	  			fprintf(stderr, "Error: malloc() failed\n");
 	  			err = -1;
 	  		}
 

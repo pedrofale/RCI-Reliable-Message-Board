@@ -55,10 +55,11 @@ void MSGSERVID_set_ip(MSGSERVID* p, struct in_addr ip) {
 }
 
 int MSGSERVID_set_ip_str(MSGSERVID* p, char* ip_str) {
-	struct in_addr *a = malloc(sizeof(struct in_addr));
-	if (inet_aton(ip_str, a) == 0) { free(a); return -1; }
-	MSGSERVID_set_ip(p, *a);
-	free(a);
+	struct in_addr a;
+	if(inet_aton(ip_str, &a) == 0) { 
+		return -1; 
+	}
+	MSGSERVID_set_ip(p, a);
 	return 0;
 }
 

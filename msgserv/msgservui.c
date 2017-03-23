@@ -38,7 +38,10 @@
  	MSGSERV_get_tpt_str(p, str);
  	strcat(msg, str);
 
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) return -1;
+ 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) { 
+ 		fprintf(stderr, "Error registering message server in the ID server\n");
+ 		return -1;
+ 	}
 
  	return 0;
  }
@@ -55,11 +58,6 @@
  	if(readmsg_udp(socket, resp, sizeof(resp)) == -1) err = -2;
  	
  	printf("%s\n", resp);
-
- 	/* parse response from ID server to create a list of MSG servers */
- 	// if this is the only server, do nothing
- 	// if there are other servers, ask one of them (eg: the first that 
- 	// isn't this one) for the messages
 
  	return err;
  }
