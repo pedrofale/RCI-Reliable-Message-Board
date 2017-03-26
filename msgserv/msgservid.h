@@ -21,9 +21,13 @@
 #ifndef _MSGSERVID_H_
 #define _MSGSERVID_H_
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 
 #define MAX_NAME_LEN 20	
 

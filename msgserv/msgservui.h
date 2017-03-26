@@ -3,7 +3,7 @@
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
- *     msgservui - user intefarce commands
+ *     msgservui - user interface commands
  *
  * DESCRIPTION
  *      Interface of the functions corresponding to commands available to the 
@@ -19,6 +19,7 @@
 #ifndef _MSGSERVUI_H_
 #define _MSGSERVUI_H_
 
+#include <stdio.h>
 #include <string.h>
 #include "msgserv.h"
 #include "comm_utils.h"
@@ -33,5 +34,5 @@
  int MSGSERVUI_show_servers(MSGSERV*, SOCKET*);
 
  int MSGSERVUI_show_messages();
- 
+
  #endif

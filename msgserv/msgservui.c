@@ -3,7 +3,7 @@
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
- *     msgservui - user intefarce commands
+ *     msgservui - user interface commands
  *
  * DESCRIPTION
  *      Implementation of the commands available to the msgserv user
@@ -18,8 +18,6 @@
  *****************************************************************************/
 
 #include "msgservui.h"
-#include <stdio.h>
-#include <string.h>
 
 /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
  int MSGSERVUI_join(MSGSERV *p, SOCKET *socket) {

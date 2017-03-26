@@ -20,9 +20,6 @@
  *****************************************************************************/
 
 #include "msgservid.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 struct sMSGSERVID {
 	char name[MAX_NAME_LEN];
