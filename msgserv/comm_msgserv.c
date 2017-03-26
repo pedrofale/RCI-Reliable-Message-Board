@@ -39,11 +39,10 @@
 int COMMMSGSERV_get_server_list(SOCKET* socket, char *server_list, int server_list_len) {
 	char msg[MAX_BUFF_SIZE] = "";
  	int err = 0;
- 	time_t t1;
 
  	strcpy(msg, "GET_SERVERS");
 
-	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
+	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1; 
 	if(readmsg_udp(socket, server_list, server_list_len) == -1) err = -2; 	
  
  	fprintf(stderr, "%s\n", server_list);
@@ -247,7 +246,7 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
   	while(curr_line) {
   		char *next_line = strchr(curr_line, '\n');
   		int curr_line_len = next_line ? (next_line-curr_line) : strlen(curr_line);
-  		char *temp_str = malloc(curr_line_len);
+  		char *temp_str = malloc(curr_line_len + 1);
   		if(cnt > 0) {
   			num_msgservs++;
 	  		if(temp_str) {
@@ -266,10 +265,10 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
 		  				msgserv_clientsockets[num_msgservs - 1] = NULL;
 		  			MSGSERVID_free(msgserv_id);
 	  			}
-	  			free(temp_str);
 	  		}
 	  		else fprintf(stderr, "Error: malloc() failed\n");
 	  	}
+	  	free(temp_str);
   		cnt++;
       	curr_line = next_line ? (next_line + 1) : NULL;
   	}
@@ -416,7 +415,7 @@ int add_smessages(MSGSERV *msgserv, char *string) {
   	while(curr_line) {
   		char *next_line = strchr(curr_line, '\n');
   		int curr_line_len = next_line ? (next_line-curr_line) : strlen(curr_line);
-  		char *temp_str = malloc(curr_line_len);
+  		char *temp_str = malloc(curr_line_len + 1);
   		if(cnt > 0)
 	  		if(temp_str) {
 	  			memcpy(temp_str, curr_line, curr_line_len);

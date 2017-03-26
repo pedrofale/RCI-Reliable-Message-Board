@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 	if(msgserv_serversocket != NULL)
 		fd_msgserv_server = SOCKET_get_fd(msgserv_serversocket);
 
-	/* wait for something to happen */
+	// Main loop
 	while(err == 0) {
 		FD_ZERO(&rfds);
 		FD_SET(STDIN, &rfds);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
 			fprintf(stderr, "error: %s\n", strerror(errno));
 			break;
-		} else if(counter == 0) {
+		} else if(counter == 0) { // timeout activated
 			printf("joining\n");
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
 			set_timeout(timeout, MSGSERV_get_r(msgserv));
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 					if((err = COMMMSGSERV_read_from_msgserv(msgserv_socketarray[i], msgserv)) == -1)
 						fprintf(stderr, "Error reading from message server socket\n");
 					if(err == -2) { // connection closed by peer
-						msgserv_socketarray[i] = NULL; 
+						SOCKET_set_is_available(msgserv_socketarray[i], 0); 
 						err = 0;
 					}
 				}
@@ -181,14 +181,15 @@ int main(int argc, char *argv[]) {
 				fd_msgserv_client = malloc(num_msgservs*sizeof(int));
 			}
 			else { // can only realloc() if already malloc()ed
-				msgserv_socketarray = realloc(msgserv_socketarray, num_msgservs);
-				fd_msgserv_client = realloc(fd_msgserv_client, num_msgservs);
+				msgserv_socketarray = realloc(msgserv_socketarray, num_msgservs * sizeof(SOCKET*));
+				fd_msgserv_client = realloc(fd_msgserv_client, num_msgservs * sizeof(int));
 			}
 
 			if(msgserv_socketarray == NULL || fd_msgserv_client == NULL) {
-				fprintf(stderr, "Error on realloc()\n");
+				fprintf(stderr, "Error allocating memory\n");
 				break;
 			}
+
 			// add this TCP socket to the array of sockets of message servers
 			msgserv_socketarray[num_msgservs - 1] = accept_tcp_server_socket(msgserv_serversocket);
 		}
@@ -197,9 +198,9 @@ int main(int argc, char *argv[]) {
 	if(num_msgservs > 0) {
 		free(fd_msgserv_client);
 		for(int i = 0; i < num_msgservs; i++) {
-			if(msgserv_socketarray[i] != NULL)
-				SOCKET_close(msgserv_socketarray[i]);
+			SOCKET_close(msgserv_socketarray[i]);
 		}
+		free(msgserv_socketarray);
 	}
 
 	SOCKET_close(msgserv_serversocket);
@@ -276,6 +277,11 @@ void init_msgserv(char **params) {
 	MSGSERV_set_r(msgserv, (int)strtol(params[7], &p, 10));
 }
 
+void set_timeout(struct timeval *timeout, int seconds) {
+	timeout->tv_sec = seconds;
+	timeout->tv_usec = 0;
+}
+
 void print_id() {
 	printf("name: %s\n", MSGSERV_get_name(msgserv));
 	printf("ip: %s\n", MSGSERV_get_ip_str(msgserv));
@@ -285,9 +291,4 @@ void print_id() {
 	printf("sipt: %d\n", MSGSERV_get_sipt(msgserv));
 	printf("m: %d\n", MSGSERV_get_m(msgserv));
 	printf("r: %d\n", MSGSERV_get_r(msgserv));
-}
-
-void set_timeout(struct timeval *timeout, int seconds) {
-	timeout->tv_sec = seconds;
-	timeout->tv_usec = 0;
 }

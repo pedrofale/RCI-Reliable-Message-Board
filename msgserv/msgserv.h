@@ -86,7 +86,6 @@ int MSGSERV_get_first_free_message_index(MSGSERV*);
 int MSGSERV_add_message(MSGSERV*, MESSAGE);
 int MSGSERV_add_message_str_lc(MSGSERV*, char*, int);
 
-
 int MSGSERV_set_name(MSGSERV*, char*);
 char* MSGSERV_get_name(MSGSERV*);
 

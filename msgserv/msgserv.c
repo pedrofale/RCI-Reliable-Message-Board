@@ -141,8 +141,7 @@ int MSGSERV_get_lc(MSGSERV *p) {
 MESSAGE* MESSAGES_create(int max_msgs) {
 	MESSAGE *messages = malloc(max_msgs*sizeof(MESSAGE));
 	for(int i = 0; i < max_msgs; i++) {
-		messages[i].msg = malloc(MAX_MSG_LEN);
-		strcpy(messages[i].msg, "");
+		messages[i].msg = malloc(MAX_MSG_LEN*sizeof(char));
 		messages[i].lc = 0;
 	}
 

@@ -33,6 +33,10 @@ void SOCKET_set_addr(SOCKET *socket, struct sockaddr_in addr);
 
 struct sockaddr_in SOCKET_get_addr(SOCKET *socket);
 
+void SOCKET_set_is_available(SOCKET *socket, int is_available);
+
+int SOCKET_get_is_available(SOCKET *socket);
+
 int SOCKET_close(SOCKET *socket);
 
 /****************************************************
