@@ -1,3 +1,12 @@
+/******************************************************************************
+ * File Name: comm_utils.h
+ * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
+ *
+ * NAME
+ *     comm_utils: interface utilities for communication via UDP and TCP sockets
+ * 
+ *****************************************************************************/
+
 #ifndef _COMMUTILS_H_
 #define _COMMUTILS_H_
 

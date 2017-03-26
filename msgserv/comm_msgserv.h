@@ -1,3 +1,17 @@
+/******************************************************************************
+ * File Name: comm_msgserv.h
+ * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
+ *
+ * NAME
+ *     comm_msgserv: interface communication handling methods on a MSG server
+ *
+ * DESCRIPTION
+ *      Interface for methods for communication via a MSG server, which can be
+ *		with terminals via UDP, with the ID server via UDP or with other MSG servers
+ *		via TCP
+ * 
+ *****************************************************************************/
+
 #ifndef _COMM_MSGSERV_H_
 #define _COMM_MSGSERV_H_
 

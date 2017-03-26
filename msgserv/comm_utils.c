@@ -7,9 +7,8 @@
  *
  * DESCRIPTION
  *      Implementation of methods regarding socket communication via UDP and TCP
- *
- * METHODS
- 
+ *		Implements a struct sSOCKET which contains the file descriptor and the address
+ * 
  *****************************************************************************/
 
  #include "comm_utils.h"

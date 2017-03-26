@@ -9,12 +9,11 @@
  *      Implementation of the commands available to the msgserv user
  *
  * METHODS
- *		join: register the server in the ID server
- *		show_servers: list the identities of all the other MSG servers this one
+ *		MSGSERVUI_join: register the server in the ID server
+ *		MSGSERVUI_show_servers: list the identities of all the other MSG servers this one
  *					  has a TCP session estabilished with
- *		show_messages: list all the messages this server has stored, ordered by
+ *		MSGSERVUI_show_messages: list all the messages this server has stored, ordered by
  *					   their LCs
- *		exit: exit the app
  *
  *****************************************************************************/
 
@@ -62,8 +61,4 @@
 	printf("%s\n", msg);
 
  	return err;
- }
-
- int MSGSERVUI_exit() {
- 	return 0;
  }

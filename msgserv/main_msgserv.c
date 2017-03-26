@@ -143,32 +143,36 @@ int main(int argc, char *argv[]) {
 			set_timeout(timeout, MSGSERV_get_r(msgserv));
 		}
 
+		// UI handling
 		if(FD_ISSET(STDIN, &rfds)) {
 			fgets(user_input, BUFFSIZE, stdin);
 			if(!strcmp(user_input, "join\n")) MSGSERVUI_join(msgserv, idserv_clientsocket);
 			if(!strcmp(user_input, "show_servers\n")) MSGSERVUI_show_servers(msgserv, idserv_clientsocket);
 			if(!strcmp(user_input, "show_messages\n")) MSGSERVUI_show_messages(msgserv);
-			if(!strcmp(user_input, "exit\n")) { MSGSERVUI_exit(); break; }
+			if(!strcmp(user_input, "exit\n")) { break; }
 		}
 
+		// Terminal handling
 		if(FD_ISSET(fd_terminal_server, &rfds)) {
 			if(COMMMSGSERV_read_from_terminal(terminal_serversocket, msgserv, msgserv_socketarray, num_msgservs) < 0) {
 				fprintf(stderr, "Error reading from terminal socket\n");
 			}
 		}
 
+		// Message servers handling
 		for(int i = 0; i < num_msgservs; i++) {
 			if(msgserv_socketarray[i] != NULL)
 				if(FD_ISSET(fd_msgserv_client[i], &rfds)) {
 					if((err = COMMMSGSERV_read_from_msgserv(msgserv_socketarray[i], msgserv)) == -1)
 						fprintf(stderr, "Error reading from message server socket\n");
-					if(err == -2) {// connection closed by peer
+					if(err == -2) { // connection closed by peer
 						msgserv_socketarray[i] = NULL; 
 						err = 0;
 					}
 				}
 		}
 
+		// Message server session keeping
 		if(FD_ISSET(fd_msgserv_server, &rfds)) {
 			num_msgservs++;
 
@@ -185,6 +189,7 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "Error on realloc()\n");
 				break;
 			}
+			// add this TCP socket to the array of sockets of message servers
 			msgserv_socketarray[num_msgservs - 1] = accept_tcp_server_socket(msgserv_serversocket);
 		}
 	} 
