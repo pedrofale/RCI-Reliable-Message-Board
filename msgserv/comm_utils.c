@@ -158,12 +158,8 @@
  ****************************************************/
 
  // create TCP sckt as a client of the server at ip
- SOCKET* create_tcp_client_socket(struct in_addr ip, int port, int timeout) {
+ SOCKET* create_tcp_client_socket(struct in_addr ip, int port) {
  	SOCKET* sckt;
-
- 	struct timeval Timeout;
-    Timeout.tv_sec = timeout;
-    Timeout.tv_usec = 0;
 
  	// allocate memory for the SOCKET structure
  	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
@@ -227,13 +223,13 @@
 	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
-		printf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "error: %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	if(listen(sckt->fd, 5) == -1){
-		printf(stderr, "error: %s\n", strerror(errno));		
+		fprintf(stderr, "error: %s\n", strerror(errno));		
 		SOCKET_close(sckt);
 		return NULL;	
 	}	
@@ -258,7 +254,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 	addrlen = sizeof(new_sckt->addr);
 	
 	if((new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen)) == -1) {
-		printf("error: %s\n", strerror(errno));
+		fprintf("error: %s\n", strerror(errno));
 		SOCKET_close(sckt);		
 		return NULL;	
 	}

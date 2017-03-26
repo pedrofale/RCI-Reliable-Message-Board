@@ -24,39 +24,16 @@
 
 /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
  int MSGSERVUI_join(MSGSERV *p, SOCKET *socket) {
- 	char msg[MAX_MSG_LEN] = "";
- 	char aux[5] = "";
-  	char str[20] = "";
-
- 	strcpy(msg, "REG ");
- 	strcpy(aux, ";");
-
- 	strcat(msg, MSGSERV_get_name(p)); strcat(msg, aux);
- 	strcat(msg, MSGSERV_get_ip_str(p)); strcat(msg, aux);
- 	MSGSERV_get_upt_str(p, str);
- 	strcat(msg, str); strcat(msg, aux);
- 	MSGSERV_get_tpt_str(p, str);
- 	strcat(msg, str);
-
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) { 
- 		fprintf(stderr, "Error registering message server in the ID server\n");
- 		return -1;
- 	}
-
- 	return 0;
+ 	return COMMMSGSERV_register(socket, p);
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
  int MSGSERVUI_show_servers(MSGSERV *p, SOCKET* socket) {
- 	char msg[MAX_MSG_LEN] = "";
- 	char resp[MAX_MSG_LEN] = "";
  	int err = 0;
- 	strcpy(msg, "GET_SERVERS");
-
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
-
- 	if(readmsg_udp(socket, resp, sizeof(resp)) == -1) err = -2;
+ 	char resp[MAX_MSG_LEN] = "";
  	
+ 	err = COMMMSGSERV_show_servers(p, socket, resp, MAX_MSG_LEN);
+
  	printf("%s\n", resp);
 
  	return err;

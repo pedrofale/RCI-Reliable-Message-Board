@@ -42,7 +42,7 @@ int readmsg_udp(SOCKET *socket, char *msg, int msglen);
  * TCP methods
  ****************************************************/
 
-SOCKET* create_tcp_client_socket(struct in_addr ip, int port, int timeout);
+SOCKET* create_tcp_client_socket(struct in_addr ip, int port);
 
 SOCKET* create_tcp_server_socket(int port);
 

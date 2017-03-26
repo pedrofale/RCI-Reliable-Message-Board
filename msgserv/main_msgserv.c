@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 	SOCKET *msgserv_serversocket;
 
 	SOCKET **msgserv_socketarray = NULL;
-	int *fd_msgserv_client = NULL;
+	int *fd_msgserv_client = 0;
 	
 	fd_set rfds;
 	fd_set errfds;
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
 	struct timeval* timeout;
 
-	char user_input[BUFFSIZE];
+	char user_input[BUFFSIZE] = "";
 	char server_list[BUFFSIZE] = "";
 	int new_message_lc;
 
@@ -143,41 +143,49 @@ int main(int argc, char *argv[]) {
 			set_timeout(timeout, MSGSERV_get_r(msgserv));
 		}
 
-		if(FD_ISSET(fd_terminal_server, &rfds)) {
-			if(read_from_terminal(terminal_serversocket, msgserv, msgserv_socketarray, num_msgservs) < 0) {
-				fprintf(stderr, "Error reading from terminal socket\n");
-			}
-		}
-
-		if(FD_ISSET(fd_msgserv_server, &rfds)) {
-			num_msgservs++;
-
-			msgserv_socketarray = realloc(msgserv_socketarray, num_msgservs);
-			fd_msgserv_client = realloc(fd_msgserv_client, num_msgservs);
-
-			if(msgserv_socketarray == NULL || fd_msgserv_client == NULL) {
-				fprintf(stderr, "Error on realloc()\n");
-				break;
-			}
-			msgserv_socketarray[num_msgservs - 1] = accept_tcp_server_socket(msgserv_serversocket);
-		}
-
-		for(int i = 0; i < num_msgservs; i++) {
-			if(msgserv_socketarray[i] != NULL)
-				if(FD_ISSET(fd_msgserv_client[i], &rfds)) {
-					if((err = read_from_msgserv(msgserv_socketarray[i], msgserv)) < 0)
-						fprintf(stderr, "Error reading from message server socket\n");
-					if(err == 0) // connection closed by peer
-						msgserv_socketarray[i] = NULL; 
-				}
-		}
-
 		if(FD_ISSET(STDIN, &rfds)) {
 			fgets(user_input, BUFFSIZE, stdin);
 			if(!strcmp(user_input, "join\n")) MSGSERVUI_join(msgserv, idserv_clientsocket);
 			if(!strcmp(user_input, "show_servers\n")) MSGSERVUI_show_servers(msgserv, idserv_clientsocket);
 			if(!strcmp(user_input, "show_messages\n")) MSGSERVUI_show_messages(msgserv);
 			if(!strcmp(user_input, "exit\n")) { MSGSERVUI_exit(); break; }
+		}
+
+		if(FD_ISSET(fd_terminal_server, &rfds)) {
+			if(COMMMSGSERV_read_from_terminal(terminal_serversocket, msgserv, msgserv_socketarray, num_msgservs) < 0) {
+				fprintf(stderr, "Error reading from terminal socket\n");
+			}
+		}
+
+		for(int i = 0; i < num_msgservs; i++) {
+			if(msgserv_socketarray[i] != NULL)
+				if(FD_ISSET(fd_msgserv_client[i], &rfds)) {
+					if((err = COMMMSGSERV_read_from_msgserv(msgserv_socketarray[i], msgserv)) == -1)
+						fprintf(stderr, "Error reading from message server socket\n");
+					if(err == -2) {// connection closed by peer
+						msgserv_socketarray[i] = NULL; 
+						err = 0;
+					}
+				}
+		}
+
+		if(FD_ISSET(fd_msgserv_server, &rfds)) {
+			num_msgservs++;
+
+			if(num_msgservs - 1 == 0) {
+				msgserv_socketarray = malloc(num_msgservs*sizeof(SOCKET*));
+				fd_msgserv_client = malloc(num_msgservs*sizeof(int));
+			}
+			else { // can only realloc() if already malloc()ed
+				msgserv_socketarray = realloc(msgserv_socketarray, num_msgservs);
+				fd_msgserv_client = realloc(fd_msgserv_client, num_msgservs);
+			}
+
+			if(msgserv_socketarray == NULL || fd_msgserv_client == NULL) {
+				fprintf(stderr, "Error on realloc()\n");
+				break;
+			}
+			msgserv_socketarray[num_msgservs - 1] = accept_tcp_server_socket(msgserv_serversocket);
 		}
 	} 
 

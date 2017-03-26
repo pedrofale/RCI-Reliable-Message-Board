@@ -5,7 +5,8 @@
 #include "msgserv.h"
 
 #define MAX_BUFF_SIZE 500
-#define TIMEOUT 10
+
+#define GET_SERVERS "GET_SERVERS"
 
 #define PUBLISH_MESSAGE "PUBLISH "
 #define GET_MESSAGES "GET_MESSAGES "
@@ -15,11 +16,14 @@
 #define SMESSAGES "SMESSAGES\n"
 
 int COMMMSGSERV_get_server_list(SOCKET* idserv_clientsocket, char *server_list, int server_list_len);
+int COMMMSGSERV_register(SOCKET *socket, MSGSERV *msgserv);
+int COMMMSGSERV_show_servers(MSGSERV *p, SOCKET* socket, char *str, int strlen);
+
 void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_list);
 
-int read_from_terminal(SOCKET *sckt, MSGSERV *msgserv, SOCKET *msgserv_clientsockets[], int num_msgservs);
+int COMMMSGSERV_read_from_terminal(SOCKET *sckt, MSGSERV *msgserv, SOCKET *msgserv_clientsockets[], int num_msgservs);
 int COMMMSGSERV_distribute_message(SOCKET *msgserv_clientsockets[], int num_msgservs, MSGSERV *msgserv);
-int read_from_msgserv(SOCKET*, MSGSERV*);
+int COMMMSGSERV_read_from_msgserv(SOCKET*, MSGSERV*);
 int COMMMSGSERV_request_messages_for_msgserv(SOCKET**, int num_msgservs, MSGSERV*);
 
 #endif
