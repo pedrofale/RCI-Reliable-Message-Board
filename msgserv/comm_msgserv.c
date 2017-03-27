@@ -465,7 +465,7 @@ int COMMMSGSERV_request_messages_for_msgserv(SOCKET *sckt[], int num_msgservs, M
 	strcpy(msg, SGET_MESSAGES);
 
 	for(int i = 0; i < num_msgservs; i++) {
-		if(sckt[i] != NULL) {			
+		if(sckt[i] != NULL && SOCKET_get_is_available(sckt[i])) {			
 			if(writemsg_tcp(sckt[i], msg, MAX_BUFF_SIZE) == -1) {
 				err = -1;
 				fprintf(stderr, "Error: error requesting message server for messages.\n");

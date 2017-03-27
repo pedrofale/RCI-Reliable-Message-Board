@@ -23,7 +23,7 @@
 
 struct sMESSAGE {
 	int lc;
-	char *msg;
+	char msg[MAX_MSG_LEN];
 };
 
 struct sMSGSERV {
@@ -33,11 +33,12 @@ struct sMSGSERV {
 	int m;
 	int r;
 	int lc;
-	MESSAGE *messages;
+	MESSAGE **messages;
 };
 
 MSGSERV* MSGSERV_create(int max_msgs) {
 	MSGSERV *ptr = malloc(sizeof(MSGSERV));
+	memset(ptr, 0, sizeof(MSGSERV));
 	ptr->messages = MESSAGES_create(max_msgs);
 	ptr->msgserv_id = MSGSERVID_create();
 	return ptr;
@@ -138,35 +139,37 @@ int MSGSERV_get_lc(MSGSERV *p) {
  * MESSAGE methods
  ****************************************************/
 
-MESSAGE* MESSAGES_create(int max_msgs) {
-	MESSAGE *messages = malloc(max_msgs*sizeof(MESSAGE));
+MESSAGE** MESSAGES_create(int max_msgs) {
+	MESSAGE **messages = malloc(max_msgs*sizeof(MESSAGE*));
+	memset(messages, 0, max_msgs);
 	for(int i = 0; i < max_msgs; i++) {
-		messages[i].msg = malloc(MAX_MSG_LEN*sizeof(char));
-		messages[i].lc = 0;
+		messages[i] = malloc(sizeof(MESSAGE));
+		strcpy(messages[i]->msg, "");
+		messages[i]->lc = 0;
 	}
 
 	return messages;
 }
 
-int MESSAGE_set_message_str(MESSAGE message, char* msgstr) {
+int MESSAGE_set_message_str(MESSAGE *message, char* msgstr) {
 	int err = 0;
 
-	if(strcpy(message.msg, msgstr) == -1)
+	if(strcpy(message->msg, msgstr) == -1)
 		err = -1;
 
 	return err;
 }
 
-char* MESSAGE_get_message_str(MESSAGE message) {
-	return message.msg;
+char* MESSAGE_get_message_str(MESSAGE *message) {
+	return message->msg;
 }
 
-void MESSAGE_set_message_lc(MESSAGE message, int lc) {
-	message.lc = lc;
+void MESSAGE_set_message_lc(MESSAGE *message, int lc) {
+	message->lc = lc;
 }
 
-int MESSAGE_get_message_lc(MESSAGE message) {
-	return message.lc;
+int MESSAGE_get_message_lc(MESSAGE *message) {
+	return message->lc;
 }
 
 char* MSGSERV_get_message_str(MSGSERV *msgserv, int i) {
@@ -182,17 +185,17 @@ int MSGSERV_get_message_lc(MSGSERV *msgserv, int i) {
 }
 
 void MSGSERV_set_message_lc(MSGSERV *msgserv, int lc, int i) {
-	msgserv->messages[i].lc = lc;
+	msgserv->messages[i]->lc = lc;
 }
 
-MESSAGE MSGSERV_get_message(MSGSERV *msgserv, int i) {
+MESSAGE* MSGSERV_get_message(MSGSERV *msgserv, int i) {
 	return msgserv->messages[i];
 }
 
-int MSGSERV_set_message(MSGSERV *msgserv, MESSAGE message, int i) {
+int MSGSERV_set_message(MSGSERV *msgserv, MESSAGE *message, int i) {
 	int err = 0;
-	err = MSGSERV_set_message_str(msgserv, message.msg, i);
-	MSGSERV_set_message_lc(msgserv,  message.lc, i);
+	err = MSGSERV_set_message_str(msgserv, message->msg, i);
+	MSGSERV_set_message_lc(msgserv,  message->lc, i);
 
 	return err;
 }
@@ -202,7 +205,7 @@ int MSGSERV_get_num_messages(MSGSERV *msgserv) {
 	int max_index = msgserv->m - 1;
 
 	for(int i = 0; i <= max_index; i++) {
-		if(strcmp(msgserv->messages[i].msg, "")) // is not empty
+		if(strcmp(msgserv->messages[i]->msg, "")) // is not empty
 			cnt ++;
 	}
 
@@ -214,7 +217,7 @@ int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
 	int max_index = msgserv->m - 1;
 
 	for(int i = 1; i <= max_index; i++) {
-		if(msgserv->messages[i].lc <= msgserv->messages[min_lc_index].lc) 
+		if(msgserv->messages[i]->lc <= msgserv->messages[min_lc_index]->lc) 
 			min_lc_index = i;
 	}
 
@@ -226,7 +229,7 @@ int MSGSERV_get_latest_message_index(MSGSERV *msgserv) {
 	int max_index = msgserv->m - 1;
 
 	for(int i = 1; i <= max_index; i++) {
-		if(msgserv->messages[i].lc >= msgserv->messages[max_lc_index].lc)
+		if(msgserv->messages[i]->lc >= msgserv->messages[max_lc_index]->lc)
 			max_lc_index = i;
 	}
 
@@ -250,17 +253,17 @@ int MSGSERV_get_first_free_message_index(MSGSERV *msgserv) {
 	int i = 0;
 
 	for(i = 0; i <= max_index; i++) {
-		if(!strcmp(msgserv->messages[i].msg, "")) // is empty
+		if(!strcmp(msgserv->messages[i]->msg, "")) // is empty
 			break;
 	}
 
-	if(i == max_index && !strcmp(msgserv->messages[i].msg, "")) // is empty
+	if(i == max_index && !strcmp(msgserv->messages[i]->msg, "")) // is empty
 		i = MSGSERV_get_oldest_message_index(msgserv);
 
 	return i;
 }
 
-int MSGSERV_add_message(MSGSERV *msgserv, MESSAGE message) {
+int MSGSERV_add_message(MSGSERV *msgserv, MESSAGE *message) {
 	return MSGSERV_set_message(msgserv, message, MSGSERV_get_first_free_message_index(msgserv));
 }
 
@@ -276,7 +279,7 @@ int MSGSERV_add_message_str_lc(MSGSERV *msgserv, char *msg, int lc) {
 
 void MESSAGES_free(MSGSERV *msgserv) {
 	for(int i = 0; i < msgserv->m; i++)
-		free(msgserv->messages[i].msg);
+		free(msgserv->messages[i]);
 	
 	free(msgserv->messages);
 }

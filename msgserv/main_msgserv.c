@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 #include "msgserv.h"
 #include "msgservui.h"
 #include "comm_utils.h"
@@ -71,6 +72,10 @@ int main(int argc, char *argv[]) {
 	char server_list[BUFFSIZE] = "";
 	int new_message_lc;
 
+	// protect against SIGPIPE signals
+	void (*old_handler)(int);
+	if((old_handler=signal(SIGPIPE,SIG_IGN))==SIG_ERR) exit(1); // error
+	
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
 
