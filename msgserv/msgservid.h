@@ -52,7 +52,11 @@ void MSGSERVID_set_tpt(MSGSERVID*, int);
 int MSGSERVID_get_tpt(MSGSERVID*);
 int MSGSERVID_get_tpt_str(MSGSERVID*, char*);
 
-int MSGSERVID_set_ip_from_reg(MSGSERVID *p, char *reg_str);
-void MSGSERVID_set_tpt_from_reg(MSGSERVID *p, char *reg_str);
+int MSGSERVID_set_ID_from_reg(MSGSERVID *p, char *reg_str);
+
+int MSGSERVID_compare_ID(MSGSERVID*, MSGSERVID*);
+int MSGSERVID_compare_ip(MSGSERVID*, MSGSERVID*);
+int MSGSERVID_compare_upt(MSGSERVID*, MSGSERVID*);
+int MSGSERVID_compare_tpt(MSGSERVID*, MSGSERVID*);
 
 #endif

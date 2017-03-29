@@ -16,7 +16,6 @@
  struct sSOCKET {
  	int fd;
  	struct sockaddr_in addr;
- 	int is_available; // 0 for FALSE, 1 for TRUE
  };
 
 
@@ -34,15 +33,6 @@
 
  struct sockaddr_in SOCKET_get_addr(SOCKET *sckt) {
  	return sckt->addr;
- }
-
- void SOCKET_set_is_available(SOCKET *sckt, int is_available) {
- 	sckt->is_available = is_available;
- }
-
- // returns 1 if socket is not NULL, 0 if it is
- int SOCKET_get_is_available(SOCKET *sckt) {
- 	return sckt->is_available;
  }
 
  int SOCKET_have_same_addr(SOCKET *sckt1, SOCKET *sckt2) {
@@ -80,8 +70,8 @@
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
@@ -94,8 +84,6 @@
 	sckt->addr.sin_family = AF_INET; // IPv4
 	sckt->addr.sin_port = htons((u_short)port);
 	sckt->addr.sin_addr.s_addr = ip.s_addr;
-
-	sckt->is_available = 1;
 	
 	return sckt;
  } 
@@ -113,8 +101,8 @@
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
@@ -130,11 +118,9 @@
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
-
-	sckt->is_available = 1;
 	
 	return sckt;
  }
@@ -183,8 +169,8 @@
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
@@ -200,11 +186,9 @@
 
 	if(connect(sckt->fd, (struct sockaddr*)&sckt->addr,sizeof(sckt->addr)) == -1){
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
-
-	sckt->is_available = 1;
 
 	return sckt;
  } 
@@ -222,8 +206,8 @@
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
@@ -239,17 +223,15 @@
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
 		fprintf(stderr, "error: %s\n", strerror(errno));
-		sckt->is_available = 0;
- 		return sckt;
+		SOCKET_close(sckt);
+		return NULL;
 	}
 
 	if(listen(sckt->fd, 5) == -1){
 		fprintf(stderr, "error: %s\n", strerror(errno));		
-		sckt->is_available = 0;
- 		return sckt;	
-	}	
-
-	sckt->is_available = 1;
+		SOCKET_close(sckt);
+		return NULL;	
+	}
 
 	return sckt;
  }
@@ -272,11 +254,8 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 	
 	if((new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen)) == -1) {
 		fprintf("error: %s\n", strerror(errno));
-		new_sckt->is_available = 0;
- 		return sckt;	
+		new_sckt = NULL;
 	}
-
-	new_sckt->is_available = 1;
 
 	return new_sckt;
 }

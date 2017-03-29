@@ -22,41 +22,6 @@
  *	- ID server to MSG server: SERVERS\nname;ip;upt;tpt\n
  ********************************************************************************/
 
-
-/*
- * Function: COMMMSGSERV_get_server_list 
- * ------------------------------------------------------------------------------
- * Prints out the list of message servers registered in the ID server.
- *
- *  socket: UDP socket to talk with the ID server
- *	server_list: string to store the list of servers
- *	server_list_len: length of server_list string
- *
- *  returns: the number of registered message servers if there wasn't any error
- *			 < 0 if there was a communication error
- */
-
-int COMMMSGSERV_get_server_list(SOCKET* socket, char *server_list, int server_list_len) {
-	char msg[MAX_BUFF_SIZE] = "";
- 	int err = 0;
-
- 	strcpy(msg, "GET_SERVERS");
-
-	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1; 
-	if(readmsg_udp(socket, server_list, server_list_len) == -1) err = -2; 	
- 
- 	fprintf(stderr, "%s\n", server_list);
-
- 	if(!(err < 0)) {
- 		// number of MSG servers is the number of \n - 2
- 		err = -2;
-	 	for(int i = 0; i < strlen(server_list); i++)
-	 		if(server_list[i] == '\n') err++;
- 	}
-
- 	return err;
-}
-
 /*
  * Function: COMMMSGSERV_register 
  * ------------------------------------------------------------------------------
@@ -73,7 +38,7 @@ int COMMMSGSERV_get_server_list(SOCKET* socket, char *server_list, int server_li
  	char aux[5] = "";
   	char str[20] = "";
 
- 	strcpy(msg, "REG ");
+ 	strcpy(msg, REGISTER);
  	strcpy(aux, ";");
 
  	strcat(msg, MSGSERV_get_name(msgserv)); strcat(msg, aux);
@@ -91,18 +56,87 @@ int COMMMSGSERV_get_server_list(SOCKET* socket, char *server_list, int server_li
  	return 0;
  }
 
-int COMMMSGSERV_show_servers(MSGSERV *p, SOCKET* socket, char *str, int str_len) {
+/*
+ * Function: COMMMSGSERV_show_servers 
+ * ------------------------------------------------------------------------------
+ * Sends a UDP request to get servers registered in the ID server.
+ *
+ *  socket: UDP socket to talk with the ID server
+ *	str: string to store the list of servers
+ *	str_len: length of server_list string
+ *
+ *  returns: < 0 if there was a communication error
+ */
+
+int COMMMSGSERV_show_servers(SOCKET* socket, char *str, int str_len) {
  	char msg[MAX_BUFF_SIZE] = "";
  	int err = 0;
+	int counter;
+	int socket_fd;
+
+ 	fd_set rfds;
+
+ 	struct timeval timeout;
+ 	timeout.tv_sec = UDP_TIMEOUT_SECS;
+ 	timeout.tv_usec = 0;
 
  	strcpy(msg, GET_SERVERS);
 
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
+ 	socket_fd = SOCKET_get_fd(socket);
 
- 	if(readmsg_udp(socket, str, str_len) == -1) err = -2;
+ 	while(strstr(str, "SERVERS") == NULL) {
+ 		FD_ZERO(&rfds);
+		FD_SET(socket_fd, &rfds);
+		
+		if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1; 
+		
+		if((counter = select(socket_fd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, &timeout)) < 0) {
+			fprintf(stderr, "error: %s\n", strerror(errno));
+			err = -1;
+			break;
+		} else if(counter == 0) { // timeout activated: didn't get answer back from the ID server
+			timeout.tv_sec = UDP_TIMEOUT_SECS;
+ 			timeout.tv_usec = 0;
+			continue;
+		}
+
+		if(FD_ISSET(socket_fd, &rfds)) {
+			if(readmsg_udp(socket, str, str_len) == -1) err = -2;
+		}
+ 	}
 
  	return err;
  }
+
+/*
+ * Function: COMMMSGSERV_get_server_list 
+ * ------------------------------------------------------------------------------
+ * Prints out the list of message servers registered in the ID server.
+ *
+ *  socket: UDP socket to talk with the ID server
+ *	server_list: string to store the list of servers
+ *	server_list_len: length of server_list string
+ *
+ *  returns: the number of registered message servers if there wasn't any error
+ *			 < 0 if there was a communication error
+ */
+
+int COMMMSGSERV_get_server_list(SOCKET* socket, char *str, int str_len) {
+ 	int err, i;
+
+ 	err = COMMMSGSERV_show_servers(socket, str, str_len);
+ 	// DEBUG
+ 	printf("%s", str);
+ 	
+ 	if(!(err < 0)) {
+ 		// number of MSG servers is the number of \n - 1
+ 		err = -1;
+	 	for(i = 0; i < strlen(str); i++)
+	 		if(str[i] == '\n') err++;
+ 	}
+
+ 	return err;
+}
 
 /********************************************************************************
  *	Communication protocol between MSG servers and terminals
@@ -196,7 +230,7 @@ int publish_message(char *buffer, MSGSERV *msgserv) {
 
 int send_messages_to_terminal(char *buffer, SOCKET *sckt, MSGSERV *msgserv) {
 	char resp[MAX_BUFF_SIZE] = "";
-	int n, aux;
+	int n, aux, i;
 	int err = 0;
 
 	// get the number of wanted messages
@@ -207,11 +241,10 @@ int send_messages_to_terminal(char *buffer, SOCKET *sckt, MSGSERV *msgserv) {
 
 	strcpy(resp, MESSAGES);
 
-	for(int i = n; i > 0; i--) {
+	for(i = n; i > 0; i--) {
 		aux = MSGSERV_get_nth_latest_index(msgserv, i);
 		strcat(resp, MSGSERV_get_message_str(msgserv, aux));
 	}
-	strcat(resp, "*");
 
 	if(sendmsg_udp(sckt, resp, sizeof(resp)) == -1) {
 		err = -1;
@@ -234,35 +267,35 @@ int send_messages_to_terminal(char *buffer, SOCKET *sckt, MSGSERV *msgserv) {
  *
  *  msgserv_clientsockets: array of TCP sockets, one socket for each message server
  *	server_list: string holding the list of servers in the format sent by the ID server
+ *	msgserv: this message server
  *
  *  returns: void
  */
 
-void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_list) {
- 	// parse response from ID server and connect to each MSG server returned
+void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_list, MSGSERV *msgserv) {
   	char * curr_line = server_list;
   	int cnt = 0;
-  	int num_msgservs = 0;
+  	int i = 0;
+
   	while(curr_line) {
   		char *next_line = strchr(curr_line, '\n');
   		int curr_line_len = next_line ? (next_line-curr_line) : strlen(curr_line);
   		char *temp_str = malloc(curr_line_len + 1);
   		if(cnt > 0) {
-  			num_msgservs++;
+  			i++;
 	  		if(temp_str) {
 	  			memcpy(temp_str, curr_line, curr_line_len);
 
 	  			// temp_str contains name;ip;upt;tpt\0
 	  			temp_str[curr_line_len] = '\0';
+
 	  			if(strstr(temp_str, ";") != NULL) {
 		  			MSGSERVID *msgserv_id = MSGSERVID_create();
 		  			// read in the IP address and TCP port of the MSG server in current line
-					MSGSERVID_set_ip_from_reg(msgserv_id, temp_str);
-					MSGSERVID_set_tpt_from_reg(msgserv_id, temp_str);
-		  			if(MSGSERVID_get_tpt(msgserv_id) == 56000 || MSGSERVID_get_tpt(msgserv_id) == 56001 || MSGSERVID_get_tpt(msgserv_id) == 56002)
-		  				msgserv_clientsockets[num_msgservs - 1] = create_tcp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_tpt(msgserv_id));
-		  			else 
-		  				msgserv_clientsockets[num_msgservs - 1] = NULL;
+					MSGSERVID_set_ID_from_reg(msgserv_id, temp_str);
+					if(!(MSGSERVID_compare_ip(msgserv_id, MSGSERV_get_ID(msgserv)) && MSGSERVID_compare_tpt(msgserv_id, MSGSERV_get_ID(msgserv))))
+		  				msgserv_clientsockets[i - 1] = create_tcp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_tpt(msgserv_id));
+		  			else msgserv_clientsockets[i - 1] = NULL;
 		  			MSGSERVID_free(msgserv_id);
 	  			}
 	  		}
@@ -328,7 +361,7 @@ int COMMMSGSERV_read_from_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 
 int send_messages_to_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 	char resp[MAX_BUFF_SIZE] = "";
-	int n, aux;
+	int n, aux, i;
 	int err = 0;
 	char lcstr[10];
 	int lc = 0;
@@ -338,7 +371,7 @@ int send_messages_to_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 
 	strcpy(resp, SMESSAGES);
 
-	for(int i = n; i > 0; i--) {
+	for(i = n; i > 0; i--) {
 		aux = MSGSERV_get_nth_latest_index(msgserv, i);
 		lc = MSGSERV_get_message_lc(msgserv, aux);
 		sprintf(lcstr, "%d", lc);
@@ -346,8 +379,6 @@ int send_messages_to_msgserv(SOCKET *sckt, MSGSERV *msgserv) {
 		strcat(resp, ";");
 		strcat(resp, MSGSERV_get_message_str(msgserv, aux));
 	}
-	// NOT SURE IF THIS SHOULD BE HERE OR NOT!!!!!
-	// strcat(resp, "*\n");
 
 	if(writemsg_tcp(sckt, resp, sizeof(resp)) == -1) {
 		err = -1;
@@ -374,6 +405,7 @@ int COMMMSGSERV_distribute_message(SOCKET *msgserv_clientsockets[], int num_msgs
 	int err = 0;
 	char new_message[MAX_BUFF_SIZE] = "";
 	char aux[10] = "";
+	int i;
 
 	strcpy(new_message, SMESSAGES);
 
@@ -382,7 +414,7 @@ int COMMMSGSERV_distribute_message(SOCKET *msgserv_clientsockets[], int num_msgs
 	strcat(new_message, ";");
 	strcat(new_message, MSGSERV_get_message_str(msgserv, MSGSERV_get_latest_message_index(msgserv)));
 	
-	for(int i = 0; i < num_msgservs; i++) {
+	for(i = 0; i < num_msgservs; i++) {
 		if(msgserv_clientsockets[i] != NULL)
 			if(writemsg_tcp(msgserv_clientsockets[i], new_message, sizeof(new_message)) == -1) {
 				err = -1;
@@ -461,31 +493,41 @@ int COMMMSGSERV_request_messages_for_msgserv(SOCKET *sckt[], int num_msgservs, M
 	char resp[MAX_BUFF_SIZE] = "";
 	char msg[MAX_BUFF_SIZE] = "";
 	int err = 0;
+	int i;
+
+	struct timeval tv;
+	tv.tv_sec = 30;  /* 30 Secs Timeout */
+	tv.tv_usec = 0;  // Not init'ing this can cause strange errors
 
 	strcpy(msg, SGET_MESSAGES);
 
-	for(int i = 0; i < num_msgservs; i++) {
-		if(sckt[i] != NULL && SOCKET_get_is_available(sckt[i])) {			
+	for(i = 0; i < num_msgservs; i++) {
+		if(sckt[i] != NULL) {	
+			setsockopt(sckt[i], SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));		
 			if(writemsg_tcp(sckt[i], msg, MAX_BUFF_SIZE) == -1) {
 				err = -1;
 				fprintf(stderr, "Error: error requesting message server for messages.\n");
 			}
-
-			if(readmsg_tcp(sckt[i], resp, MAX_BUFF_SIZE) == -1) {
+			else if(readmsg_tcp(sckt[i], resp, MAX_BUFF_SIZE) == -1) {
 				err = -2;
 				fprintf(stderr, "Error: error receiving message list.\n");
+			}
+			if(strstr(resp, MESSAGES) == NULL) {
+				SOCKET_close(sckt[i]);
+				sckt[i] = NULL;
 			}
 		}
 	}
 
-	printf("Message list:\n%s\n", resp);
-	
-	// Parse messages from response string and store them in this MSG server
-	if(add_smessages(msgserv, resp) == -1) {
-		err = -3;
-		fprintf(stderr, "Error: error adding messages.\n");
+	if(strstr(resp, MESSAGES)) {
+		printf("Message list:\n%s\n", resp);
+		
+		// Parse messages from response string and store them in this MSG server
+		if(add_smessages(msgserv, resp) == -1) {
+			err = -3;
+			fprintf(stderr, "Error: error adding messages.\n");
+		}
 	}
 
 	return err;
 }
-

@@ -25,11 +25,11 @@
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int MSGSERVUI_show_servers(MSGSERV *p, SOCKET* socket) {
+ int MSGSERVUI_show_servers(SOCKET* socket) {
  	int err = 0;
  	char resp[MAX_MSG_LEN] = "";
  	
- 	err = COMMMSGSERV_show_servers(p, socket, resp, MAX_MSG_LEN);
+ 	err = COMMMSGSERV_show_servers(socket, resp, MAX_MSG_LEN);
 
  	printf("%s\n", resp);
 
@@ -40,14 +40,14 @@
  int MSGSERVUI_show_messages(MSGSERV *p) {
  	char msg[MAX_MSG_LEN] = "";
  	int err = 0;
- 	int aux, n, lc;
+ 	int aux, n, lc, i;
  	char lcstr[10];
 
  	n = MSGSERV_get_num_messages(p);
 
 	strcpy(msg, MESSAGES);
 
-	for(int i = n; i > 0; i--) {
+	for(i = n; i > 0; i--) {
 		aux = MSGSERV_get_nth_latest_index(p, i);
 		lc = MSGSERV_get_message_lc(p, aux);
 		sprintf(lcstr, "%d", lc);

@@ -140,9 +140,11 @@ int MSGSERV_get_lc(MSGSERV *p) {
  ****************************************************/
 
 MESSAGE** MESSAGES_create(int max_msgs) {
+	int i;
 	MESSAGE **messages = malloc(max_msgs*sizeof(MESSAGE*));
 	memset(messages, 0, max_msgs);
-	for(int i = 0; i < max_msgs; i++) {
+	
+	for(i = 0; i < max_msgs; i++) {
 		messages[i] = malloc(sizeof(MESSAGE));
 		strcpy(messages[i]->msg, "");
 		messages[i]->lc = 0;
@@ -201,10 +203,10 @@ int MSGSERV_set_message(MSGSERV *msgserv, MESSAGE *message, int i) {
 }
 
 int MSGSERV_get_num_messages(MSGSERV *msgserv) {
-	int cnt = 0;
+	int cnt = 0, i;
 	int max_index = msgserv->m - 1;
 
-	for(int i = 0; i <= max_index; i++) {
+	for(i = 0; i <= max_index; i++) {
 		if(strcmp(msgserv->messages[i]->msg, "")) // is not empty
 			cnt ++;
 	}
@@ -213,10 +215,10 @@ int MSGSERV_get_num_messages(MSGSERV *msgserv) {
 }
 
 int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
-	int min_lc_index = 0;
+	int min_lc_index = 0, i;
 	int max_index = msgserv->m - 1;
 
-	for(int i = 1; i <= max_index; i++) {
+	for(i = 1; i <= max_index; i++) {
 		if(msgserv->messages[i]->lc <= msgserv->messages[min_lc_index]->lc) 
 			min_lc_index = i;
 	}
@@ -225,10 +227,10 @@ int MSGSERV_get_oldest_message_index(MSGSERV *msgserv) {
 }
 
 int MSGSERV_get_latest_message_index(MSGSERV *msgserv) {
-	int max_lc_index = 0;
+	int max_lc_index = 0, i;
 	int max_index = msgserv->m - 1;
 
-	for(int i = 1; i <= max_index; i++) {
+	for(i = 1; i <= max_index; i++) {
 		if(msgserv->messages[i]->lc >= msgserv->messages[max_lc_index]->lc)
 			max_lc_index = i;
 	}
@@ -278,7 +280,8 @@ int MSGSERV_add_message_str_lc(MSGSERV *msgserv, char *msg, int lc) {
 }
 
 void MESSAGES_free(MSGSERV *msgserv) {
-	for(int i = 0; i < msgserv->m; i++)
+	int i = 0;
+	for(i = 0; i < msgserv->m; i++)
 		free(msgserv->messages[i]);
 	
 	free(msgserv->messages);

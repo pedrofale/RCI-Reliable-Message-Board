@@ -29,7 +29,9 @@ struct sMSGSERVID {
 };
 
 MSGSERVID* MSGSERVID_create() {
-	return malloc(sizeof(MSGSERVID)); 
+	MSGSERVID *ptr = malloc(sizeof(MSGSERVID));
+	memset(ptr, 0, sizeof(MSGSERVID));
+	return ptr; 
 }
 
 void MSGSERVID_free(MSGSERVID* p) {
@@ -92,27 +94,63 @@ int MSGSERVID_get_tpt_str(MSGSERVID* p, char* str) {
 	return sprintf(str, "%d", p->tpt);
 }
 
-int MSGSERVID_set_ip_from_reg(MSGSERVID *p, char *reg_str) {
-	char dummy[128] = "";
+int MSGSERVID_set_ID_from_reg(MSGSERVID *p, char *reg_str) {
+	char name[128] = "";
  	char ip[20] = "";
-
- 	sscanf(reg_str, "%[^';'];%[^';']", dummy, ip);
-
- 	if(MSGSERVID_set_ip_str(p, ip) == -1) 
- 		return -1;
-
- 	return 0;
-}
-
-void MSGSERVID_set_tpt_from_reg(MSGSERVID *p, char *reg_str) {
-	char dummy[128] = "";
- 	char ip[20] = "";
- 	char tptstr[10]  = "";
- 	char uptstr[10] = "";
+ 	char uptstr[10]  = "";
+ 	char tptstr[10] = "";
  	int tpt;
+ 	int upt;
+ 	int err = 0;
 
- 	sscanf(reg_str, "%[^';'];%[^';'];%[^';'];%[^';']", dummy, ip, uptstr, tptstr);
+ 	sscanf(reg_str, "%[^';'];%[^';'];%[^';'];%[^';']", name, ip, uptstr, tptstr);
+ 	upt = atoi(uptstr);
  	tpt = atoi(tptstr);
 
+ 	MSGSERVID_set_name(p, name);
+ 	if(MSGSERVID_set_ip_str(p, ip) == -1) 
+ 		err = -1;
+ 	MSGSERVID_set_upt(p, upt);
  	MSGSERVID_set_tpt(p, tpt);
+
+ 	return err;
+}
+
+int MSGSERVID_compare_ID(MSGSERVID *p1, MSGSERVID *p2) {
+	int are_equal = 0;
+
+	if(strcmp(MSGSERVID_get_name(p1), MSGSERVID_get_name(p2)) == 0)
+		if(strcmp(MSGSERVID_get_ip_str(p1), MSGSERVID_get_ip_str(p2)) == 0)
+			if(MSGSERVID_get_upt(p1) == MSGSERVID_get_upt(p2))
+				if(MSGSERVID_get_tpt(p1) == MSGSERVID_get_tpt(p2))
+					are_equal = 1;
+
+	return are_equal;
+}
+
+int MSGSERVID_compare_ip(MSGSERVID *p1, MSGSERVID *p2) {
+	int are_equal = 0;
+
+	if(strcmp(MSGSERVID_get_ip_str(p1), MSGSERVID_get_ip_str(p2)) == 0)
+		are_equal = 1;
+
+	return are_equal;
+}
+
+int MSGSERVID_compare_upt(MSGSERVID *p1, MSGSERVID *p2) {
+	int are_equal = 0;
+
+	if(MSGSERVID_get_upt(p1) == MSGSERVID_get_upt(p2))
+		are_equal = 1;
+
+	return are_equal;
+}
+
+int MSGSERVID_compare_tpt(MSGSERVID *p1, MSGSERVID *p2) {
+	int are_equal = 0;
+
+	if(MSGSERVID_get_tpt(p1) == MSGSERVID_get_tpt(p2))
+		are_equal = 1;
+
+	return are_equal;
 }

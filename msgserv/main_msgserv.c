@@ -48,7 +48,7 @@ void print_id();
 
 void parse_args(char **, int, char **);
 
-void set_timeout(struct timeval *, int);
+void set_timeout(struct timeval *, int, int);
 
 int main(int argc, char *argv[]) {
 	SOCKET *idserv_clientsocket;
@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
 	int *fd_msgserv_client = 0;
 	
 	fd_set rfds;
-	fd_set errfds;
+
+	int i;
 	int counter;
 	int maxfd = 0;
 	int fd_idserv_client, fd_terminal_server, fd_msgserv_server;
@@ -67,6 +68,8 @@ int main(int argc, char *argv[]) {
 	int err = 0;
 
 	struct timeval* timeout;
+	time_t t1;
+	int diff = 0;
 
 	char user_input[BUFFSIZE] = "";
 	char server_list[BUFFSIZE] = "";
@@ -84,7 +87,7 @@ int main(int argc, char *argv[]) {
 
 	// server refresh time
 	timeout = malloc(sizeof(struct timeval));
-	set_timeout(timeout, MSGSERV_get_r(msgserv));
+	set_timeout(timeout, MSGSERV_get_r(msgserv), 0);
 
 	/* create UDP server socket on port upt to connect to RMB terminals */
 	terminal_serversocket = create_udp_server_socket(MSGSERV_get_upt(msgserv));
@@ -98,6 +101,10 @@ int main(int argc, char *argv[]) {
 	msgserv_serversocket = create_tcp_server_socket(MSGSERV_get_tpt(msgserv));
 	if(msgserv_serversocket == NULL) err = -1;
 
+	/* register this message server in the ID server */
+	printf("joining\n");
+	MSGSERVUI_join(msgserv, idserv_clientsocket);
+
 	/* count number of MSG servers registered in the ID server */
 	num_msgservs = COMMMSGSERV_get_server_list(idserv_clientsocket, server_list, sizeof(server_list));
 	
@@ -105,7 +112,7 @@ int main(int argc, char *argv[]) {
 		msgserv_socketarray = malloc(num_msgservs*sizeof(SOCKET*));
 		fd_msgserv_client = malloc(num_msgservs*sizeof(int));
 		/* estabilish TCP session with all MSG servers available in the ID server */
-		COMMMSGSERV_connect_msgservs(msgserv_socketarray, server_list);
+		COMMMSGSERV_connect_msgservs(msgserv_socketarray, server_list, msgserv);
 		/* get all the messages from another MSG server (eg the first on the list) */
 		COMMMSGSERV_request_messages_for_msgserv(msgserv_socketarray, num_msgservs, msgserv);
 	}
@@ -129,7 +136,7 @@ int main(int argc, char *argv[]) {
 		if (fd_msgserv_server > maxfd)
 			maxfd = fd_msgserv_server;
 
-		for(int i = 0; i < num_msgservs; i++) {
+		for(i = 0; i < num_msgservs; i++) {
 			if(msgserv_socketarray[i] != NULL) {
 				fd_msgserv_client[i] = SOCKET_get_fd(msgserv_socketarray[i]);
 				if(fd_msgserv_client[i] > maxfd)
@@ -139,20 +146,25 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
+		printf("timeout->tv_sec: %d\n", timeout->tv_sec);
+		t1 = time(NULL);
 		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
 			fprintf(stderr, "error: %s\n", strerror(errno));
 			break;
 		} else if(counter == 0) { // timeout activated
 			printf("joining\n");
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
-			set_timeout(timeout, MSGSERV_get_r(msgserv));
+			set_timeout(timeout, MSGSERV_get_r(msgserv), 0);
+		} else {
+			diff = time(NULL) - t1;
+			set_timeout(timeout, MSGSERV_get_r(msgserv), diff);
 		}
 
 		// UI handling
 		if(FD_ISSET(STDIN, &rfds)) {
 			fgets(user_input, BUFFSIZE, stdin);
 			if(!strcmp(user_input, "join\n")) MSGSERVUI_join(msgserv, idserv_clientsocket);
-			if(!strcmp(user_input, "show_servers\n")) MSGSERVUI_show_servers(msgserv, idserv_clientsocket);
+			if(!strcmp(user_input, "show_servers\n")) MSGSERVUI_show_servers(idserv_clientsocket);
 			if(!strcmp(user_input, "show_messages\n")) MSGSERVUI_show_messages(msgserv);
 			if(!strcmp(user_input, "exit\n")) { break; }
 		}
@@ -165,13 +177,18 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Message servers handling
-		for(int i = 0; i < num_msgservs; i++) {
+		for(i = 0; i < num_msgservs; i++) {
 			if(msgserv_socketarray[i] != NULL)
 				if(FD_ISSET(fd_msgserv_client[i], &rfds)) {
-					if((err = COMMMSGSERV_read_from_msgserv(msgserv_socketarray[i], msgserv)) == -1)
+					if((err = COMMMSGSERV_read_from_msgserv(msgserv_socketarray[i], msgserv)) == -1) {
 						fprintf(stderr, "Error reading from message server socket\n");
-					if(err == -2) { // connection closed by peer
-						SOCKET_set_is_available(msgserv_socketarray[i], 0); 
+						err = 0;
+					}
+						
+					if(err == -2) { // connection closed by peer: close this socket
+						SOCKET_close(msgserv_socketarray[i]);
+						msgserv_socketarray[i] = NULL;
+						fd_msgserv_client[i] = -1;
 						err = 0;
 					}
 				}
@@ -202,7 +219,7 @@ int main(int argc, char *argv[]) {
 
 	if(num_msgservs > 0) {
 		free(fd_msgserv_client);
-		for(int i = 0; i < num_msgservs; i++) {
+		for(i = 0; i < num_msgservs; i++) {
 			SOCKET_close(msgserv_socketarray[i]);
 		}
 		free(msgserv_socketarray);
@@ -282,8 +299,8 @@ void init_msgserv(char **params) {
 	MSGSERV_set_r(msgserv, (int)strtol(params[7], &p, 10));
 }
 
-void set_timeout(struct timeval *timeout, int seconds) {
-	timeout->tv_sec = seconds;
+void set_timeout(struct timeval *timeout, int seconds, int diff) {
+	timeout->tv_sec = seconds - diff;
 	timeout->tv_usec = 0;
 }
 
