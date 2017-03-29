@@ -1,7 +1,7 @@
 
 
 
-
+#include "rmb.h"
 
 
 
@@ -14,9 +14,17 @@ struct sRMB {
 };
 
 
+RMB* RMB_create(){
 
+	return malloc(sizeof(RMB));
 
+}
 
+void RMB_free(RMB *rmb){
+
+	free(rmb);
+
+}
 
 
 
@@ -33,16 +41,7 @@ int RMB_set_siip_str(RMB *p, char *siip_str) {
 	return 0;
 }
 
-int RMB_set_siip_dns(RMB *p, char *dns) {
-	struct hostent *hostptr;
-	if((hostptr = gethostbyname(dns)) == NULL) return -1;
 
-	struct in_addr *a = malloc(sizeof(struct in_addr));
-	a = (struct in_addr *)hostptr->h_addr_list[0];
-	RMB_set_siip(p, *a);
-	free(a);
-	return 0;
-}
 
 struct in_addr RMB_get_siip(RMB *p ) {
 	return p->siip;
@@ -67,13 +66,5 @@ void RMB_set_sipt(RMB *p, int sipt) {
 
 int RMB_get_sipt(RMB *p) {
 	return p->sipt;
-}
-
-int RMB_set_name(RMB *p, char *name) {
-	return RMB_set_name(p->msgserv_id, name);
-}
-
-char* RMB_get_name(RMB *p) {
-	return RMB_get_name(p->msgserv_id);
 }
 
