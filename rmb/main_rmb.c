@@ -57,8 +57,6 @@ int main(int argc, char *argv[]) {
 	
 	int fd_msgserv_socket = SOCKET_get_fd(msgserv_socket);
 
-	//connect via udp to message server
-
 	/* wait for input from the CLI */
 	while(1) {
 		FD_ZERO(&rfds);

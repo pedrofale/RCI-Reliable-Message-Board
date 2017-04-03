@@ -102,7 +102,6 @@ int main(int argc, char *argv[]) {
 	if(msgserv_serversocket == NULL) err = -1;
 
 	/* register this message server in the ID server */
-	printf("joining\n");
 	MSGSERVUI_join(msgserv, idserv_clientsocket);
 
 	/* count number of MSG servers registered in the ID server */
@@ -146,13 +145,11 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		printf("timeout->tv_sec: %d\n", timeout->tv_sec);
 		t1 = time(NULL);
 		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
 			fprintf(stderr, "error: %s\n", strerror(errno));
 			break;
 		} else if(counter == 0) { // timeout activated
-			printf("joining\n");
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
 			set_timeout(timeout, MSGSERV_get_r(msgserv), 0);
 		} else {
@@ -275,7 +272,10 @@ void usage(char *prog_name) {
 void init_msgserv(char **params) {
 	char *p;
 	int m = (int)strtol(params[6], &p, 10);
-
+	if(m <= 0) {
+		fprintf(stderr, "Error: parameter m must be greater than 0.\n");
+		exit(-1);
+	}
 	msgserv = MSGSERV_create(m);
 
 	if(MSGSERV_set_name(msgserv, params[0]) == -1) {

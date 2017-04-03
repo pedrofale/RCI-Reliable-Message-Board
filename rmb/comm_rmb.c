@@ -115,9 +115,8 @@ int COMMRMB_get_servers(SOCKET* socket, char *server_list, int server_list_len) 
 
 int COMMRMB_get_n_messages(SOCKET *socket, int n) {
 	int err = 0;
-	char show_n[128]="GET_MESSAGES ";
+	char show_n[MAX_BUFF_SIZE]="GET_MESSAGES ";
 	char n_str[10] = "";
-	char ret_msg[128] = "";
 
 	sprintf(n_str, "%d", n);
 	strcat(show_n, n_str);
@@ -139,7 +138,7 @@ int COMMRMB_get_n_messages(SOCKET *socket, int n) {
  */
 
 int COMMRMB_read_messages(SOCKET* socket) {
-	char ret_msg[128];
+	char ret_msg[MAX_BUFF_SIZE];
 	int err = 0;
 
 	if(readmsg_udp(socket, ret_msg, sizeof(ret_msg)) == -1) 

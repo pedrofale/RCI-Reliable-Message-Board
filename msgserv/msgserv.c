@@ -258,6 +258,8 @@ int MSGSERV_get_first_free_message_index(MSGSERV *msgserv) {
 		if(!strcmp(msgserv->messages[i]->msg, "")) // is empty
 			break;
 	}
+	
+	if(i > max_index) i--;
 
 	if(i == max_index && !strcmp(msgserv->messages[i]->msg, "")) // is empty
 		i = MSGSERV_get_oldest_message_index(msgserv);
