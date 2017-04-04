@@ -244,7 +244,7 @@ int MSGSERV_get_nth_latest_index(MSGSERV *msgserv, int n) {
 	int nth_latest = latest - (n-1);
 
 	if(nth_latest < 0)
-		nth_latest = max_index - n;
+		nth_latest = max_index + 1 + nth_latest;
 
 	return nth_latest;
 }
@@ -261,7 +261,7 @@ int MSGSERV_get_first_free_message_index(MSGSERV *msgserv) {
 	
 	if(i > max_index) i--;
 
-	if(i == max_index && !strcmp(msgserv->messages[i]->msg, "")) // is empty
+	if(i == max_index && strcmp(msgserv->messages[i]->msg, "") != 0) // is not empty
 		i = MSGSERV_get_oldest_message_index(msgserv);
 
 	return i;
