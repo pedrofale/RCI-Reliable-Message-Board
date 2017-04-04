@@ -92,7 +92,7 @@ int COMMRMB_get_servers(SOCKET* socket, char *server_list, int server_list_len) 
  */
 
  int COMMRMB_publish_message(SOCKET *socket, char *msg){
- 	char pub[128]="PUBLISH ";
+ 	char pub[MAX_BUFF_SIZE]="PUBLISH ";
 
  	strcat(pub, msg);
 

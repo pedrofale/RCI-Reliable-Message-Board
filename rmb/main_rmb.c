@@ -26,60 +26,78 @@
 #include "rmbui.h"
 #include "comm_rmb.h"
 #include "comm_utils.h"
-#define BUFFSIZE 128
+#define BUFFSIZE 500
+#define REFRESH_SECS 10
 #define STDIN 0
 
 RMB* rmb;
 
 void parse_args(char **, int, char **);
 
+void set_timeout(struct timeval *, int, int);
+
 int main(int argc, char *argv[]) {
 	SOCKET *idserv_socket;
 	SOCKET *msgserv_socket;
 	fd_set rfds;
+	
 	int counter;
 	int maxfd=0;
-	char server_list_str[128];
-	char user_input[128];
+	
+	char server_list_str[BUFFSIZE];
+	char user_input[BUFFSIZE];
 	char params[2];
+
+	struct timeval *timeout;
 	time_t start;
+	int diff = 0;
+
 	parse_args(argv,argc,params);
 	init_rmb(params);
 
-	//Show servers
+	// server refresh time
+	timeout = malloc(sizeof(struct timeval));
+	set_timeout(timeout, REFRESH_SECS, 0);
+
+	// Get servers from ID server and create a UDP socket to talk to one of the MSG servers
 	strcpy(server_list_str, "");
 	idserv_socket = create_udp_client_socket(RMB_get_siip(rmb), RMB_get_sipt(rmb));
 	if(COMMRMB_get_servers(idserv_socket, server_list_str, sizeof(server_list_str)) < 0) 
-		printf("Show Servers failed\n");
+		fprintf(stderr, "Failed to get server list from ID server.\n");
 	MSGSERVID *msgserv_id = MSGSERVID_create();
 	set_msgserv_id_str(msgserv_id, server_list_str);
 	msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
 	
 	int fd_msgserv_socket = SOCKET_get_fd(msgserv_socket);
 
-	/* wait for input from the CLI */
+	// Main loop
 	while(1) {
 		FD_ZERO(&rfds);
 		FD_SET(STDIN, &rfds);
 		FD_SET(fd_msgserv_socket, &rfds);
 
-		start = time(&start);
 		maxfd = fd_msgserv_socket;
-		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL)) < 0) {
+		
+		start = time(NULL);
+		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
 			printf("error: %s\n", strerror(errno));
 			break;
-		}
-
-		if(time(NULL)-start > 10) {
+		} else if(counter == 0) { // timeout activated: check if MSG server is still available
 			strcpy(server_list_str, "");
 			if(COMMRMB_get_servers(idserv_socket, server_list_str, sizeof(server_list_str)) < 0) 
-				printf("Show Servers failed\n");
+				fprintf(stderr, "Failed to get server list from ID server.\n");
 			if(!server_online(msgserv_id, server_list_str, strlen(server_list_str))){
+				// create new socket for the first MSG server in the ID server list
 				set_msgserv_id_str(msgserv_id, server_list_str);
 				SOCKET_close(msgserv_socket);
 				msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
 			}
+			set_timeout(timeout, REFRESH_SECS, 0);
+		} else { // account for the time select() was blocked
+			diff = time(NULL) - start;
+			set_timeout(timeout, REFRESH_SECS, diff);
 		}
+
 		if(FD_ISSET(fd_msgserv_socket, &rfds)){
 			COMMRMB_read_messages(msgserv_socket);
 		}
@@ -90,13 +108,13 @@ int main(int argc, char *argv[]) {
 			if(!strcmp(user_input, "show_servers\n")) RMBUI_show_servers(idserv_socket); 
 			if(!strncmp(user_input, "show_latest_messages", strlen("show_latest_messages"))) RMBUI_show_n_messages(msgserv_socket, user_input);
 			if(!strcmp(user_input, "exit\n")) break;
-		}
-
- 
+		} 
 	}
+
 	SOCKET_close(msgserv_socket);
 	MSGSERVID_free(msgserv_id);
 	SOCKET_close(idserv_socket);
+	free(timeout);
 	RMB_free(rmb);
 }
 
@@ -133,6 +151,11 @@ void init_rmb(char **params){
 	RMB_set_siip_str(rmb, params[0]);
 	RMB_set_sipt(rmb, (int)strtol(params[1], &p, 10));
 
+}
+
+void set_timeout(struct timeval *timeout, int seconds, int diff) {
+	timeout->tv_sec = seconds - diff;
+	timeout->tv_usec = 0;
 }
 
 int server_online(MSGSERVID *msgserv_id, char* server_list, int server_list_len){
@@ -179,9 +202,9 @@ int server_online(MSGSERVID *msgserv_id, char* server_list, int server_list_len)
 }
 
  int set_msgserv_id_str(MSGSERVID *msgservid, char *server_list){
- 	char dummy[128] = "";
- 	char ip[128]  = "";
- 	char uptstr[128]  = "";
+ 	char dummy[BUFFSIZE] = "";
+ 	char ip[BUFFSIZE]  = "";
+ 	char uptstr[BUFFSIZE]  = "";
  	int upt;
 
  	sscanf(server_list, "%[^';'];%[^';'];%[^';']", dummy, ip, uptstr);
