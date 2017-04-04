@@ -35,7 +35,6 @@
 #include <errno.h>
 
 #define BUFFSIZE 500
-#define MAX_ARG_LEN 100
 #define STDIN 0
 
 MSGSERV *msgserv;
@@ -75,7 +74,7 @@ int main(int argc, char *argv[]) {
 	char server_list[BUFFSIZE] = "";
 	int new_message_lc;
 
-	// protect against SIGPIPE signals
+	// protect against SIGPIPE signals caused by TCP sessions
 	void (*old_handler)(int);
 	if((old_handler=signal(SIGPIPE,SIG_IGN))==SIG_ERR) exit(1); // error
 	
@@ -152,7 +151,7 @@ int main(int argc, char *argv[]) {
 		} else if(counter == 0) { // timeout activated
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
 			set_timeout(timeout, MSGSERV_get_r(msgserv), 0);
-		} else {
+		} else { // account for the time select() was blocked
 			diff = time(NULL) - t1;
 			set_timeout(timeout, MSGSERV_get_r(msgserv), diff);
 		}
