@@ -57,21 +57,23 @@
  }
 
 /*
- * Function: COMMMSGSERV_show_servers 
+ * Function: COMMMSGSERV_get_servers 
  * ------------------------------------------------------------------------------
- * Sends a UDP request to get servers registered in the ID server.
+ * Send a UDP request to get the servers registered in the ID server.
  *
  *  socket: UDP socket to talk with the ID server
- *	str: string to store the list of servers
- *	str_len: length of server_list string
+ *	server_list: string to store the list of servers
+ *	server_list_len: length of server_list string
+ *	tries: number of times the client tries to get the server list via UDP
  *
- *  returns: < 0 if there was a communication error
+ *  returns: -1 if there was an error or if the list wasn't received
+ *			  1 if the list of servers was successfully fetched
  */
 
-int COMMMSGSERV_show_servers(SOCKET* socket, char *str, int str_len) {
- 	char msg[MAX_BUFF_SIZE] = "";
+int COMMMSGSERV_get_servers(SOCKET* socket, char *server_list, int server_list_len, int tries) {
+	char msg[MAX_BUFF_SIZE] = "";
  	int err = 0;
-	int counter;
+ 	int counter, i;
 	int socket_fd;
 
  	fd_set rfds;
@@ -80,63 +82,69 @@ int COMMMSGSERV_show_servers(SOCKET* socket, char *str, int str_len) {
  	timeout.tv_sec = UDP_TIMEOUT_SECS;
  	timeout.tv_usec = 0;
 
- 	strcpy(msg, GET_SERVERS);
-
+ 	strcpy(server_list, "");
  	socket_fd = SOCKET_get_fd(socket);
 
- 	while(strstr(str, "SERVERS") == NULL) {
+ 	strcpy(msg, GET_SERVERS);
+
+ 	while(err >= 0 && tries > 0) {
+ 		tries--;
+
+ 		// ask for the server list
+ 		if(sendmsg_udp(socket, msg, MAX_BUFF_SIZE) == -1) err = -1; 
+
  		FD_ZERO(&rfds);
 		FD_SET(socket_fd, &rfds);
-		
-		if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1; 
-		
 		if((counter = select(socket_fd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, &timeout)) < 0) {
 			fprintf(stderr, "error: %s\n", strerror(errno));
 			err = -1;
 			break;
-		} else if(counter == 0) { // timeout activated: didn't get answer back from the ID server
+		} else if(counter == 0) { // timeout activated, didn't get answer back from the ID server
 			timeout.tv_sec = UDP_TIMEOUT_SECS;
  			timeout.tv_usec = 0;
 			continue;
 		}
 
 		if(FD_ISSET(socket_fd, &rfds)) {
-			if(readmsg_udp(socket, str, str_len) == -1) err = -2;
+			if(readmsg_udp(socket, server_list, server_list_len) == -1) err = -2;
+			if(strstr(server_list, SERVERS) != NULL) {
+				// received the list of servers
+				err = 1;
+				break;
+			}
 		}
  	}
-
- 	return err;
- }
-
-/*
- * Function: COMMMSGSERV_get_server_list 
- * ------------------------------------------------------------------------------
- * Prints out the list of message servers registered in the ID server.
- *
- *  socket: UDP socket to talk with the ID server
- *	server_list: string to store the list of servers
- *	server_list_len: length of server_list string
- *
- *  returns: the number of registered message servers if there wasn't any error
- *			 < 0 if there was a communication error
- */
-
-int COMMMSGSERV_get_server_list(SOCKET* socket, char *str, int str_len) {
- 	int err, i;
-
- 	err = COMMMSGSERV_show_servers(socket, str, str_len);
- 	// DEBUG
- 	printf("%s", str);
- 	
- 	if(!(err < 0)) {
- 		// number of MSG servers is the number of \n - 1
+ 	if(tries == 0 && err != 1) // didn't receive the server list
  		err = -1;
-	 	for(i = 0; i < strlen(str); i++)
-	 		if(str[i] == '\n') err++;
- 	}
 
  	return err;
 }
+
+ /*
+ * Function: COMMMSGSERV_get_num_msgservs
+ * ------------------------------------------------------------------------------
+ * Returns the number of message servers registered in the ID server.
+ *
+ *	str: string containing the list of servers
+ *
+ *  returns: the number of registered message servers
+ */
+
+int COMMMSGSERV_get_num_msgservs(char *str) {
+ 	int num_msgservs, i;
+
+ 	printf("%s", str);
+
+	// number of MSG servers is the number of \n - 1
+	num_msgservs = -2;
+	for(i = 0; i < strlen(str); i++)
+		if(str[i] == '\n') num_msgservs++;
+
+	printf("%d\n", num_msgservs);
+
+ 	return num_msgservs;
+}
+
 
 /********************************************************************************
  *	Communication protocol between MSG servers and terminals

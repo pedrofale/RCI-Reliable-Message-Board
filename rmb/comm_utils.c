@@ -63,20 +63,20 @@
 
  	// allocate memory for the SOCKET structure
  	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
- 		fprintf(stderr, "error: malloc() failed\n");
+ 		fprintf(stderr, "Error: malloc() failed\n");
  		return NULL;
  	} 
 
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in socket(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		fprintf(stderr, "error: memset() failed\n");
+		fprintf(stderr, "Error: memset() failed\n");
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -94,20 +94,20 @@
 
  	// allocate memory for the SOCKET structure
  	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
- 		fprintf(stderr, "error: malloc() failed\n");
+ 		fprintf(stderr, "Error: malloc() failed\n");
  		return NULL;
  	} 
 
 	// create an endpoint for communication via UDP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in socket(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		fprintf(stderr, "error: memset() failed\n");
+		fprintf(stderr, "Error: memset() failed\n");
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -117,7 +117,7 @@
 	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in bind(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -131,7 +131,7 @@
  	int err = 0;
  	int n = 0;
  	if(sendto(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in sendto(): %s\n", strerror(errno));
 		err = -1;
 	}
 
@@ -144,7 +144,7 @@
  	int addrlen = sizeof(sckt->addr);
 
  	if(recvfrom(sckt->fd, msg, msglen, 0, (struct sockaddr*)&sckt->addr, &addrlen) == -1) {
-		fprintf(stderr, "error: %s\n",strerror(errno));
+		fprintf(stderr, "Error in recvfrom(): %s\n",strerror(errno));
 		err = -1;
 	}
 
@@ -162,20 +162,20 @@
 
  	// allocate memory for the SOCKET structure
  	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
- 		fprintf(stderr, "error: malloc() failed\n");
+ 		fprintf(stderr, "Error: malloc() failed\n");
  		return NULL;
  	} 
 
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in socket(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		fprintf(stderr, "error: memset() failed\n");
+		fprintf(stderr, "Error: memset() failed\n");
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -185,7 +185,7 @@
 	sckt->addr.sin_addr.s_addr = ip.s_addr;
 
 	if(connect(sckt->fd, (struct sockaddr*)&sckt->addr,sizeof(sckt->addr)) == -1){
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in connect(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -199,20 +199,20 @@
 
  	// allocate memory for the SOCKET structure
  	if((sckt = malloc(sizeof(SOCKET))) == NULL) {
- 		fprintf(stderr, "error: malloc() failed\n");
+ 		fprintf(stderr, "Error: malloc() failed\n");
  		return NULL;
  	} 
 
 	// create an endpoint for communication via TCP using IPv4
 	if((sckt->fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in socket(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	// fill the memory area pointed by the structure addr with \0
 	if(memset((void*)&sckt->addr, (int)'\0', sizeof(sckt->addr)) == NULL) {
-		fprintf(stderr, "error: memset() failed\n");
+		fprintf(stderr, "Error: memset() failed\n");
 		SOCKET_close(sckt);
 		return NULL;
 	}
@@ -222,13 +222,13 @@
 	sckt->addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if(bind(sckt->fd, (struct sockaddr*)&sckt->addr, sizeof(sckt->addr)) == -1){
-		fprintf(stderr, "error: %s\n", strerror(errno));
+		fprintf(stderr, "Error in bind(): %s\n", strerror(errno));
 		SOCKET_close(sckt);
 		return NULL;
 	}
 
 	if(listen(sckt->fd, 5) == -1){
-		fprintf(stderr, "error: %s\n", strerror(errno));		
+		fprintf(stderr, "Error in listen(): %s\n", strerror(errno));		
 		SOCKET_close(sckt);
 		return NULL;	
 	}
@@ -242,7 +242,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 	int addrlen = 0;
 
 	if((new_sckt = malloc(sizeof(SOCKET))) == NULL) {
- 		fprintf(stderr, "error: malloc() failed\n");
+ 		fprintf(stderr, "Error: malloc() failed\n");
  		return NULL;
  	} 
 
@@ -253,7 +253,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 	addrlen = sizeof(new_sckt->addr);
 	
 	if((new_sckt->fd = accept(sckt->fd, (struct sockaddr*)&new_sckt->addr, &addrlen)) == -1) {
-		fprintf("error: %s\n", strerror(errno));
+		fprintf("Error in accept(): %s\n", strerror(errno));
 		new_sckt = NULL;
 	}
 
@@ -270,7 +270,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
  	
  	while(nleft > 0) {
  		if((nwritten = write(sckt->fd, msgptr, nleft)) < 0) {
-			fprintf(stderr, "error: %s\n", strerror(errno));
+			fprintf(stderr, "Error in write(): %s\n", strerror(errno));
 			err = -1;
 			break;
 		}
@@ -291,7 +291,7 @@ SOCKET* accept_tcp_server_socket(SOCKET *sckt) {
 
  	while(nleft > 0) {
 	 	if((nread = read(sckt->fd, msgptr, nleft)) == -1) {
-			fprintf(stderr, "error: %s\n",strerror(errno));
+			fprintf(stderr, "Error in read(): %s\n",strerror(errno));
 			err = nread;
 			break;
 		}

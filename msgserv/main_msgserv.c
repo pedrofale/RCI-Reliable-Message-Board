@@ -36,6 +36,7 @@
 
 #define BUFFSIZE 500
 #define STDIN 0
+#define UDP_NUM_TRIES 5
 
 MSGSERV *msgserv;
 
@@ -76,7 +77,7 @@ int main(int argc, char *argv[]) {
 
 	// protect against SIGPIPE signals caused by TCP sessions
 	void (*old_handler)(int);
-	if((old_handler=signal(SIGPIPE,SIG_IGN))==SIG_ERR) exit(1); // error
+	if((old_handler = signal(SIGPIPE,SIG_IGN)) == SIG_ERR) exit(1); // error
 	
 	// array of char* containing each parameter string for the MSG server
 	char *params[8];
@@ -100,19 +101,28 @@ int main(int argc, char *argv[]) {
 	msgserv_serversocket = create_tcp_server_socket(MSGSERV_get_tpt(msgserv));
 	if(msgserv_serversocket == NULL) err = -1;
 
-	/* register this message server in the ID server */
-	MSGSERVUI_join(msgserv, idserv_clientsocket);
+	// Get servers from ID server and create a UDP socket to talk to one of the MSG servers
+	if(COMMMSGSERV_get_servers(idserv_clientsocket, server_list, BUFFSIZE, UDP_NUM_TRIES) < 0) { // couldn't fetch the list of servers from the ID server
+		fprintf(stderr, "Couldn't reach ID server.\n");
+		err = -2;
+	}
 
-	/* count number of MSG servers registered in the ID server */
-	num_msgservs = COMMMSGSERV_get_server_list(idserv_clientsocket, server_list, sizeof(server_list));
-	
-	if(num_msgservs > 0) {
-		msgserv_socketarray = malloc(num_msgservs*sizeof(SOCKET*));
-		fd_msgserv_client = malloc(num_msgservs*sizeof(int));
-		/* estabilish TCP session with all MSG servers available in the ID server */
-		COMMMSGSERV_connect_msgservs(msgserv_socketarray, server_list, msgserv);
-		/* get all the messages from another MSG server (eg the first on the list) */
-		COMMMSGSERV_request_messages_for_msgserv(msgserv_socketarray, num_msgservs, msgserv);
+	// if the ID server was reached
+	if(err != -2) {
+		/* register this message server in the ID server */
+		MSGSERVUI_join(msgserv, idserv_clientsocket);
+
+		/* count number of MSG servers registered in the ID server */
+		num_msgservs = COMMMSGSERV_get_num_msgservs(server_list);
+		
+		if(num_msgservs > 0) {
+			msgserv_socketarray = malloc(num_msgservs*sizeof(SOCKET*));
+			fd_msgserv_client = malloc(num_msgservs*sizeof(int));
+			/* estabilish TCP session with all MSG servers available in the ID server */
+			COMMMSGSERV_connect_msgservs(msgserv_socketarray, server_list, msgserv);
+			/* get all the messages from another MSG server (eg the first on the list) */
+			COMMMSGSERV_request_messages_for_msgserv(msgserv_socketarray, num_msgservs, msgserv);
+		}
 	}
 
 	if(idserv_clientsocket != NULL)
@@ -146,7 +156,7 @@ int main(int argc, char *argv[]) {
 
 		t1 = time(NULL);
 		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
-			fprintf(stderr, "error: %s\n", strerror(errno));
+			fprintf(stderr, "Error in select(): %s\n", strerror(errno));
 			break;
 		} else if(counter == 0) { // timeout activated
 			MSGSERVUI_join(msgserv, idserv_clientsocket);
@@ -160,7 +170,8 @@ int main(int argc, char *argv[]) {
 		if(FD_ISSET(STDIN, &rfds)) {
 			fgets(user_input, BUFFSIZE, stdin);
 			if(!strcmp(user_input, "join\n")) MSGSERVUI_join(msgserv, idserv_clientsocket);
-			if(!strcmp(user_input, "show_servers\n")) MSGSERVUI_show_servers(idserv_clientsocket);
+			if(!strcmp(user_input, "show_servers\n"))
+				if(MSGSERVUI_show_servers(idserv_clientsocket, UDP_NUM_TRIES) < 0) break;
 			if(!strcmp(user_input, "show_messages\n")) MSGSERVUI_show_messages(msgserv);
 			if(!strcmp(user_input, "exit\n")) { break; }
 		}

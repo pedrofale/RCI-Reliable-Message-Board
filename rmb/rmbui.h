@@ -19,6 +19,7 @@
 #ifndef _RMBUI_H_
 #define _RMBUI_H_
 
+#include "comm_rmb.h"
 #include "rmb.h"
 #include "comm_utils.h"
 #include "msgservid.h"
@@ -26,10 +27,10 @@
 
 
 #define MAX_BUFF_SIZE 500
-#define UDP_TIMEOUT_SECS 10
+#define UDP_TIMEOUT_SECS 1
 
-int RMBUI_show_servers(SOCKET* socket);
-int RMBUI_publish(SOCKET *socket, char *user_input);
-int RMBUI_show_n_messages(SOCKET *socket, char *user_input);
+int RMBUI_show_servers(SOCKET* socket, int tries);
+int RMBUI_publish(SOCKET *socket, char *user_input, int tries);
+int RMBUI_show_n_messages(SOCKET *socket, char *user_input, int tries);
 
 #endif

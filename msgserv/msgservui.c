@@ -25,13 +25,15 @@
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int MSGSERVUI_show_servers(SOCKET* socket) {
+ int MSGSERVUI_show_servers(SOCKET* socket, int tries) {
  	int err = 0;
- 	char resp[MAX_MSG_LEN] = "";
+ 	char str[MAX_MSG_LEN] = "";
  	
- 	err = COMMMSGSERV_show_servers(socket, resp, MAX_MSG_LEN);
-
- 	printf("%s\n", resp);
+ 	if((err = COMMMSGSERV_get_servers(socket, str, MAX_MSG_LEN, tries))> 0)
+		printf("%s\n", str);
+	else {
+		fprintf(stderr, "Couldn't reach ID server.\n");
+	}
 
  	return err;
  }

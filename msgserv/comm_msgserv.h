@@ -19,10 +19,11 @@
 #include "msgserv.h"
 
 #define MAX_BUFF_SIZE 500
-#define UDP_TIMEOUT_SECS 10
+#define UDP_TIMEOUT_SECS 1
 
 #define REGISTER "REG "
 #define GET_SERVERS "GET_SERVERS"
+#define SERVERS "SERVERS\n"
 
 #define PUBLISH_MESSAGE "PUBLISH "
 #define GET_MESSAGES "GET_MESSAGES "
@@ -32,8 +33,8 @@
 #define SMESSAGES "SMESSAGES\n"
 
 int COMMMSGSERV_register(SOCKET *socket, MSGSERV *msgserv);
-int COMMMSGSERV_show_servers(SOCKET* socket, char *str, int strlen);
-int COMMMSGSERV_get_server_list(SOCKET* idserv_clientsocket, char *server_list, int server_list_len);
+int COMMMSGSERV_get_servers(SOCKET* socket, char *server_list, int server_list_len, int tries);
+int COMMMSGSERV_get_num_msgservs(char *str);
 
 void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_list, MSGSERV *msgserv);
 

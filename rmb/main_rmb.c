@@ -26,15 +26,18 @@
 #include "rmbui.h"
 #include "comm_rmb.h"
 #include "comm_utils.h"
+
 #define BUFFSIZE 500
 #define REFRESH_SECS 10
 #define STDIN 0
+
+#define max(A,B) ((A)>=(B)?(A):(B))
 
 RMB* rmb;
 
 void parse_args(char **, int, char **);
 
-void set_timeout(struct timeval *, int, int);
+void init_rmb(char **params);
 
 int main(int argc, char *argv[]) {
 	SOCKET *idserv_socket;
@@ -43,78 +46,120 @@ int main(int argc, char *argv[]) {
 	
 	int counter;
 	int maxfd=0;
+	int err = 0;
+	int fd_msgserv_socket = -1;
 	
 	char server_list_str[BUFFSIZE];
+	char messages[BUFFSIZE];
 	char user_input[BUFFSIZE];
 	char params[2];
-
-	struct timeval *timeout;
-	time_t start;
-	int diff = 0;
 
 	parse_args(argv,argc,params);
 	init_rmb(params);
 
-	// server refresh time
-	timeout = malloc(sizeof(struct timeval));
-	set_timeout(timeout, REFRESH_SECS, 0);
-
-	// Get servers from ID server and create a UDP socket to talk to one of the MSG servers
 	strcpy(server_list_str, "");
 	idserv_socket = create_udp_client_socket(RMB_get_siip(rmb), RMB_get_sipt(rmb));
-	if(COMMRMB_get_servers(idserv_socket, server_list_str, sizeof(server_list_str)) < 0) 
-		fprintf(stderr, "Failed to get server list from ID server.\n");
-	MSGSERVID *msgserv_id = MSGSERVID_create();
-	set_msgserv_id_str(msgserv_id, server_list_str);
-	msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
 	
-	int fd_msgserv_socket = SOCKET_get_fd(msgserv_socket);
+	// Get servers from ID server and create a UDP socket to talk to one of the MSG servers
+	err = COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES);
+	if(err < 0) { // couldn't fetch the list of servers from the ID server
+		msgserv_socket = NULL;
+		fprintf(stderr, "Couldn't reach ID server.\n");
+	}
+	else { 
+		err = 0; 
+		// connect to one of the servers in the list of servers
+		msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str); 
+	}
+
+	if(msgserv_socket != NULL) { // if there are servers available in the list
+		fd_msgserv_socket = SOCKET_get_fd(msgserv_socket);
+	} else {
+		fprintf(stderr, "No servers available. Try again later.\n");
+		err = -1;
+	}
 
 	// Main loop
-	while(1) {
+	while(err == 0) {
 		FD_ZERO(&rfds);
 		FD_SET(STDIN, &rfds);
-		FD_SET(fd_msgserv_socket, &rfds);
+		if(msgserv_socket != NULL) {
+			fd_msgserv_socket = SOCKET_get_fd(msgserv_socket);
+			FD_SET(fd_msgserv_socket, &rfds);
+		} else fd_msgserv_socket = -1;
 
-		maxfd = fd_msgserv_socket;
-		
-		start = time(NULL);
-		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, timeout)) < 0) {
+		maxfd = max(fd_msgserv_socket, STDIN);
+		if((counter = select(maxfd + 1, &rfds, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL)) < 0) {
 			printf("error: %s\n", strerror(errno));
 			break;
-		} else if(counter == 0) { // timeout activated: check if MSG server is still available
-			strcpy(server_list_str, "");
-			if(COMMRMB_get_servers(idserv_socket, server_list_str, sizeof(server_list_str)) < 0) 
-				fprintf(stderr, "Failed to get server list from ID server.\n");
-			if(!server_online(msgserv_id, server_list_str, strlen(server_list_str))){
-				// create new socket for the first MSG server in the ID server list
-				set_msgserv_id_str(msgserv_id, server_list_str);
-				SOCKET_close(msgserv_socket);
-				msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
-			}
-			set_timeout(timeout, REFRESH_SECS, 0);
-		} else { // account for the time select() was blocked
-			diff = time(NULL) - start;
-			set_timeout(timeout, REFRESH_SECS, diff);
-		}
+		} 
 
+		// MSG server handling
 		if(FD_ISSET(fd_msgserv_socket, &rfds)){
-			COMMRMB_read_messages(msgserv_socket);
+			COMMRMB_read_messages(msgserv_socket, messages, sizeof(messages));
+ 			printf("%s\n", messages);
 		}
 
+		// UI handling
 		if(FD_ISSET(STDIN, &rfds)) {
 			fgets(user_input, BUFFSIZE, stdin);
-			if(!strncmp(user_input, "publish", strlen("publish"))) RMBUI_publish(msgserv_socket, user_input);
-			if(!strcmp(user_input, "show_servers\n")) RMBUI_show_servers(idserv_socket); 
-			if(!strncmp(user_input, "show_latest_messages", strlen("show_latest_messages"))) RMBUI_show_n_messages(msgserv_socket, user_input);
+			if(!strncmp(user_input, "publish", strlen("publish"))) {
+				err = RMBUI_publish(msgserv_socket, user_input, UDP_NUM_TRIES); 
+				if(err == 1 || err == 3) { // couldn't reach message server
+					SOCKET_close(msgserv_socket);
+					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
+						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
+					else {
+						fprintf(stderr, "Couldn't reach ID server.\n");
+						break;
+					}
+					fprintf(stdout, "Couldn't send message to server. Try again.\n");
+				} else if(err == 2) { // there is no connection to a message server
+					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
+						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
+					else {
+						fprintf(stderr, "Couldn't reach ID server.\n");
+						break;
+					}
+					if(msgserv_socket == NULL)
+						fprintf(stderr, "No servers available. Try again later.\n");
+					else RMBUI_publish(msgserv_socket, user_input, UDP_NUM_TRIES);
+				}
+				err = 0;
+			}
+			if(!strcmp(user_input, "show_servers\n")) {
+				if(RMBUI_show_servers(idserv_socket, UDP_NUM_TRIES) < 0) break;
+			}
+			if(!strncmp(user_input, "show_latest_messages", strlen("show_latest_messages"))) {
+				err = RMBUI_show_n_messages(msgserv_socket, user_input, UDP_NUM_TRIES); 
+				if(err == 1) { // couldn't reach message server
+					SOCKET_close(msgserv_socket);
+					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
+						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
+					else {
+						fprintf(stderr, "Couldn't reach ID server.\n");
+						break;
+					}
+					fprintf(stdout, "Couldn't get messages from server. Try again.\n");
+				} else if(err == 2) { // there is no connection to a message server
+					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
+						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
+					else {
+						fprintf(stderr, "Couldn't reach ID server.\n");
+						break;
+					}
+					if(msgserv_socket == NULL)
+						fprintf(stderr, "No servers available. Try again later.\n");
+					else RMBUI_show_n_messages(msgserv_socket, user_input, UDP_NUM_TRIES);
+				}
+				err = 0;
+			}
 			if(!strcmp(user_input, "exit\n")) break;
 		} 
 	}
 
 	SOCKET_close(msgserv_socket);
-	MSGSERVID_free(msgserv_id);
 	SOCKET_close(idserv_socket);
-	free(timeout);
 	RMB_free(rmb);
 }
 
@@ -145,17 +190,11 @@ void usage(char *prog_name) {
 }
 
 void init_rmb(char **params){
-
 	char* p;
 	rmb = RMB_create();
 	RMB_set_siip_str(rmb, params[0]);
 	RMB_set_sipt(rmb, (int)strtol(params[1], &p, 10));
 
-}
-
-void set_timeout(struct timeval *timeout, int seconds, int diff) {
-	timeout->tv_sec = seconds - diff;
-	timeout->tv_usec = 0;
 }
 
 int server_online(MSGSERVID *msgserv_id, char* server_list, int server_list_len){
@@ -200,18 +239,3 @@ int server_online(MSGSERVID *msgserv_id, char* server_list, int server_list_len)
   	}
   	return status;
 }
-
- int set_msgserv_id_str(MSGSERVID *msgservid, char *server_list){
- 	char dummy[BUFFSIZE] = "";
- 	char ip[BUFFSIZE]  = "";
- 	char uptstr[BUFFSIZE]  = "";
- 	int upt;
-
- 	sscanf(server_list, "%[^';'];%[^';'];%[^';']", dummy, ip, uptstr);
- 	upt = atoi(uptstr);
- 	if(MSGSERVID_set_ip_str(msgservid, ip)==-1) 
- 		return -1;
- 	MSGSERVID_set_upt(msgservid, upt);
-
- 	return 0;
- }
