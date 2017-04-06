@@ -30,7 +30,7 @@
  	char str[MAX_MSG_LEN] = "";
  	
  	if((err = COMMMSGSERV_get_servers(socket, str, MAX_MSG_LEN, tries))> 0)
-		printf("%s\n", str);
+		printf("%s", str);
 	else {
 		fprintf(stderr, "Couldn't reach ID server.\n");
 	}
@@ -58,7 +58,7 @@
 		strcat(msg, MSGSERV_get_message_str(p, aux));
 	}
 
-	printf("%s\n", msg);
+	printf("%s", msg);
 
  	return err;
  }

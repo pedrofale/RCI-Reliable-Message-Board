@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 		// MSG server handling
 		if(FD_ISSET(fd_msgserv_socket, &rfds)){
 			COMMRMB_read_messages(msgserv_socket, messages, sizeof(messages));
- 			printf("%s\n", messages);
+ 			printf("%s", messages);
 		}
 
 		// UI handling
