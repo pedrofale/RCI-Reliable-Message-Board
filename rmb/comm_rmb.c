@@ -47,7 +47,7 @@ int COMMRMB_get_servers(SOCKET* socket, char *server_list, int server_list_len, 
  	timeout.tv_sec = UDP_TIMEOUT_SECS;
  	timeout.tv_usec = 0;
 
- 	strcpy(server_list, "");
+ 	memset(server_list, 0, server_list_len);
  	socket_fd = SOCKET_get_fd(socket);
 
  	strcpy(msg, GET_SERVERS);
@@ -159,24 +159,6 @@ int COMMRMB_read_messages(SOCKET* socket, char *messages, int messages_len) {
 
  }
 
-SOCKET* COMMRMB_connect_to_message_server(SOCKET *idserv_socket, char *server_list_str) {
-	SOCKET *msgserv_socket;
-	int num_msgservs = 0;
-
-	if((num_msgservs = COMMRMB_get_num_msgservs(server_list_str)) < 0) {
-		fprintf(stderr, "Failed to get server list from ID server.\n");
-	} else if(num_msgservs > 0) {
-		MSGSERVID *msgserv_id = MSGSERVID_create();
-		set_msgserv_id_str(msgserv_id, server_list_str, num_msgservs);
-		msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
-		MSGSERVID_free(msgserv_id);
-	} else {
-		msgserv_socket = NULL;
-	}
-
-	return msgserv_socket;
-}
-
  void set_msgserv_id_str(MSGSERVID *msgservid, char *server_list, int num_msgservs){
  	char * curr_line = server_list;
   	int cnt = 0;
@@ -209,6 +191,24 @@ SOCKET* COMMRMB_connect_to_message_server(SOCKET *idserv_socket, char *server_li
       	curr_line = next_line ? (next_line + 1) : NULL;
   	}
  }
+
+SOCKET* COMMRMB_connect_to_message_server(SOCKET *idserv_socket, char *server_list_str) {
+	SOCKET *msgserv_socket;
+	int num_msgservs = 0;
+
+	if((num_msgservs = COMMRMB_get_num_msgservs(server_list_str)) < 0) {
+		fprintf(stderr, "Failed to get server list from ID server.\n");
+	} else if(num_msgservs > 0) {
+		MSGSERVID *msgserv_id = MSGSERVID_create();
+		set_msgserv_id_str(msgserv_id, server_list_str, num_msgservs);
+		msgserv_socket = create_udp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_upt(msgserv_id));
+		MSGSERVID_free(msgserv_id);
+	} else {
+		msgserv_socket = NULL;
+	}
+
+	return msgserv_socket;
+}
 
  /*
  * Function: COMMRMB_get_num_msgservs

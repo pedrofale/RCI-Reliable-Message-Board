@@ -82,7 +82,7 @@ int COMMMSGSERV_get_servers(SOCKET* socket, char *server_list, int server_list_l
  	timeout.tv_sec = UDP_TIMEOUT_SECS;
  	timeout.tv_usec = 0;
 
- 	strcpy(server_list, "");
+ 	memset(server_list, 0, server_list_len);
  	socket_fd = SOCKET_get_fd(socket);
 
  	strcpy(msg, GET_SERVERS);
