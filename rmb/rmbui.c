@@ -73,7 +73,7 @@
 
 	 	sscanf(user_input, "%*s %[^\t\n]", msg);
 
-	 	while(tries > 0 || err >= 0) {
+	 	while(tries > 0 && err >= 0) {
 	 		tries--;
 
 		 	err = COMMRMB_publish_message(socket, msg);
@@ -86,8 +86,10 @@
 				err = -1;
 				break;
 			} else if(counter == 0) { // timeout activated: the server is not online
-				err = 1;
-				break;
+				timeout.tv_sec = UDP_TIMEOUT_SECS;
+	 			timeout.tv_usec = 0;
+	 			err = 1;
+				continue;
 			}
 
 			if(FD_ISSET(fd, &rfds)) {
@@ -142,7 +144,7 @@
 	 	// check how many messages the user requested
 	 	sscanf(user_input, "%*s %[^\t\n]", n_str);
 
-	 	while(tries > 0 || err >= 0) {
+	 	while(tries > 0 && err >= 0) {
 	 		tries--;
 
 		 	COMMRMB_get_n_messages(socket, atoi(n_str));
@@ -154,8 +156,10 @@
 				err = -1;
 				break;
 			} else if(counter == 0) { // timeout activated: the server is not online
-				err = 1;
-				break;
+				timeout.tv_sec = UDP_TIMEOUT_SECS;
+	 			timeout.tv_usec = 0;
+	 			err = 1;
+				continue;
 			}
 
 			if(FD_ISSET(fd, &rfds)) {
