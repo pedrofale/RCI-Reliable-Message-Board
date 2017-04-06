@@ -88,6 +88,7 @@ int COMMMSGSERV_get_servers(SOCKET* socket, char *server_list, int server_list_l
  	strcpy(msg, GET_SERVERS);
 
  	while(err >= 0 && tries > 0) {
+
  		tries--;
 
  		// ask for the server list
@@ -134,7 +135,7 @@ int COMMMSGSERV_get_num_msgservs(char *str) {
  	int num_msgservs, i;
 
 	// number of MSG servers is the number of \n - 1
-	num_msgservs = -2;
+	num_msgservs = -1;
 	for(i = 0; i < strlen(str); i++)
 		if(str[i] == '\n') num_msgservs++;
 
