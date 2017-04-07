@@ -13,6 +13,7 @@
  *						in the ID server
  *		publish message: publish a message in a MSG server
  *		show_latest_messages n: ask for the latest n messages in a MSG server
+ *		exit: exit the app
  *
  *****************************************************************************/
 
@@ -28,7 +29,6 @@
 #include "comm_utils.h"
 
 #define BUFFSIZE 500
-#define REFRESH_SECS 10
 #define STDIN 0
 
 #define max(A,B) ((A)>=(B)?(A):(B))
@@ -47,6 +47,7 @@ int main(int argc, char *argv[]) {
 	int counter;
 	int maxfd=0;
 	int err = 0;
+	int msgserv_socket_is_closed = 0; // to check if the msgserv_socket is closed (1) or not (0)
 	int fd_msgserv_socket = -1;
 	
 	char server_list_str[BUFFSIZE];
@@ -107,6 +108,7 @@ int main(int argc, char *argv[]) {
 				err = RMBUI_publish(msgserv_socket, user_input, UDP_NUM_TRIES); 
 				if(err == 1 || err == 3) { // couldn't reach message server
 					SOCKET_close(msgserv_socket);
+					msgserv_socket_is_closed = 1;
 					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
 						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
 					else {
@@ -134,6 +136,7 @@ int main(int argc, char *argv[]) {
 				err = RMBUI_show_n_messages(msgserv_socket, user_input, UDP_NUM_TRIES); 
 				if(err == 1) { // couldn't reach message server
 					SOCKET_close(msgserv_socket);
+					msgserv_socket_is_closed = 1;
 					if(COMMRMB_get_servers(idserv_socket, server_list_str, BUFFSIZE, UDP_NUM_TRIES)> 0)
 						msgserv_socket = COMMRMB_connect_to_message_server(idserv_socket, server_list_str);
 					else {
@@ -158,7 +161,8 @@ int main(int argc, char *argv[]) {
 		} 
 	}
 
-	SOCKET_close(msgserv_socket);
+	if(!msgserv_socket_is_closed) // make sure we're not closing an already closed socket
+		SOCKET_close(msgserv_socket);
 	SOCKET_close(idserv_socket);
 	RMB_free(rmb);
 }

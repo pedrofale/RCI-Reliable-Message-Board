@@ -1,9 +1,9 @@
 /******************************************************************************
- * File Name: msgserv.c
+ * File Name: main_msgserv.c
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
- *     msgserv - message server for the RCI reliable message board app
+ *     main_msgserv - message server for the RCI reliable message board app
  *
  * DESCRIPTION
  *      Program to run on each message server which contacts the ID server via UDP,
@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
 		err = -2;
 	}
 
-	// if the ID server was reached
-	if(err != -2) {
+	// if the ID server was reached and all the sockets were successfully created
+	if(err != -2 && err != -1) {
 		/* register this message server in the ID server */
 		MSGSERVUI_join(msgserv, idserv_clientsocket);
 
