@@ -3,77 +3,62 @@
  * Author: Filipe Ferreira, João Nobre, Pedro Ferreira IST MEEC
  *
  * NAME
- *     msgservui - user intefarce commands
+ *     msgservui - user interface commands
  *
  * DESCRIPTION
  *      Implementation of the commands available to the msgserv user
  *
  * METHODS
- *		join: register the server in the ID server
- *		show_servers: list the identities of all the other MSG servers this one
+ *		MSGSERVUI_join: register the server in the ID server
+ *		MSGSERVUI_show_servers: list the identities of all the other MSG servers this one
  *					  has a TCP session estabilished with
- *		show_messages: list all the messages this server has stored, ordered by
+ *		MSGSERVUI_show_messages: list all the messages this server has stored, ordered by
  *					   their LCs
- *		exit: exit the app
  *
  *****************************************************************************/
 
 #include "msgservui.h"
-#include <stdio.h>
-#include <string.h>
 
 /* send "REG name;ip;upt;tpt" to siip at port sipt via UDP */
- int join(MSGSERV *p, SOCKET *socket) {
- 	char msg[MAX_MSG_LEN];
- 	char aux[5];
-  	char str[20];
-  	char resp[MAX_MSG_LEN];
-
- 	strcpy(msg, "REG ");
- 	strcpy(aux, ";");
-
- 	strcat(msg, MSGSERV_get_name(p)); strcat(msg, aux);
- 	strcat(msg, MSGSERV_get_ip_str(p)); strcat(msg, aux);
- 	MSGSERV_get_upt_str(p, str);
- 	strcat(msg, str); strcat(msg, aux);
- 	MSGSERV_get_tpt_str(p, str);
- 	strcat(msg, str);
-
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) return -1;
-
- 	// DEBUG
- 	printf(">> Sent: %s\n", msg);
-
- 	return 0;
+ int MSGSERVUI_join(MSGSERV *p, SOCKET *socket) {
+ 	return COMMMSGSERV_register(socket, p);
  }
 
  /* send "GET_SERVERS" to siip at port sipt via UDP */
- int show_servers(MSGSERV *p, SOCKET* socket) {
- 	char msg[MAX_MSG_LEN];
- 	char resp[MAX_MSG_LEN];
+ int MSGSERVUI_show_servers(SOCKET* socket, int tries) {
  	int err = 0;
- 	strcpy(msg, "GET_SERVERS");
-
- 	if(sendmsg_udp(socket, msg, sizeof(msg)) == -1) err = -1;
-
- 	// DEBUG
- 	printf(">> Sent: %s\n", msg);
-
- 	if(readmsg_udp(socket, resp, sizeof(msg)) == -1) err = -2;
+ 	char str[MAX_MSG_LEN] = "";
  	
- 	// DEBUG
- 	printf(">> Received: %s\n", resp);
-
- 	/* parse message from ID server to create a list of MSG servers */
+ 	if((err = COMMMSGSERV_get_servers(socket, str, MAX_MSG_LEN, tries))> 0)
+		printf("%s", str);
+	else {
+		fprintf(stderr, "Couldn't reach ID server.\n");
+	}
 
  	return err;
  }
 
 
- int show_messages() {
- 	return 0;
- }
+ int MSGSERVUI_show_messages(MSGSERV *p) {
+ 	char msg[MAX_MSG_LEN] = "";
+ 	int err = 0;
+ 	int aux, n, lc, i;
+ 	char lcstr[10];
 
- int exitapp() {
- 	return 0;
+ 	n = MSGSERV_get_num_messages(p);
+
+	strcpy(msg, MESSAGES);
+
+	for(i = n; i > 0; i--) {
+		aux = MSGSERV_get_nth_latest_index(p, i);
+		lc = MSGSERV_get_message_lc(p, aux);
+		sprintf(lcstr, "%d", lc);
+		strcat(msg, lcstr);
+		strcat(msg, ";");
+		strcat(msg, MSGSERV_get_message_str(p, aux));
+	}
+
+	printf("%s", msg);
+
+ 	return err;
  }
