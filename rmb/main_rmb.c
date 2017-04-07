@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 		exit(0);
 	}
 
-	params[0] = "193.136.138.142"; // IP address of tejo.tecnico.ulisboa.pt
+	params[0] = "192.168.1.1"; // IP address of tejo.tecnico.ulisboa.pt
 	params[1] = "59000"; // echo server is at port 58000
 
 	int option = 0;

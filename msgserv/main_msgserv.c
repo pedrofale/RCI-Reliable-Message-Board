@@ -247,7 +247,7 @@ void parse_args(char **argv, int argc, char **params) {
 		exit(0);
 	}
 
-	params[4] = "193.136.138.142"; // IP address of tejo.tecnico.ulisboa.pt
+	params[4] = "192.168.1.1"; // IP address of tejo.tecnico.ulisboa.pt
 	params[5] = "59000"; // echo server is at port 58000
 	params[6] = "200";
 	params[7] = "10";

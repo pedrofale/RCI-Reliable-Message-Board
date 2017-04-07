@@ -298,6 +298,7 @@ void COMMMSGSERV_connect_msgservs(SOCKET *msgserv_clientsockets[], char *server_
 		  			MSGSERVID *msgserv_id = MSGSERVID_create();
 		  			// read in the IP address and TCP port of the MSG server in current line
 					MSGSERVID_set_ID_from_reg(msgserv_id, temp_str);
+					// check if not trying to connect to self
 					if(!(MSGSERVID_compare_ip(msgserv_id, MSGSERV_get_ID(msgserv)) && MSGSERVID_compare_tpt(msgserv_id, MSGSERV_get_ID(msgserv))))
 		  				msgserv_clientsockets[i - 1] = create_tcp_client_socket(MSGSERVID_get_ip(msgserv_id), MSGSERVID_get_tpt(msgserv_id));
 		  			else msgserv_clientsockets[i - 1] = NULL;
